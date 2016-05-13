@@ -1,2 +1,2 @@
 # easy3DEngine
-A very simple game engine
+A very simple 3D engine
