@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "outFile": "./build/build.js",
+    "removeComments": false,
+    "declaration": true,
+    "diagnostics": true,
+    "pretty": true,
+    "watch": true
+  },
+  "exclude": [
+    "build"
+  ],
+  "compileOnSave": true
+}
