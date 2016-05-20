@@ -1,20 +1,50 @@
-/// <reference path="engine3D/Render/render.ts" />
-var canvas;
-var screen;
-var scene;
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var render;
+var mesh;
 document.addEventListener("DOMContentLoaded", init, false);
 function init() {
-    screen = new engine3D.Screen(document.getElementById("frontBuffer"));
+    mesh = new mesh3D.Mesh("Cube", 8, 12);
+    mesh.Vertices[0] = new BABYLON.Vector3(-1, 1, 1);
+    mesh.Vertices[1] = new BABYLON.Vector3(1, 1, 1);
+    mesh.Vertices[2] = new BABYLON.Vector3(-1, -1, 1);
+    mesh.Vertices[3] = new BABYLON.Vector3(1, -1, 1);
+    mesh.Vertices[4] = new BABYLON.Vector3(-1, 1, -1);
+    mesh.Vertices[5] = new BABYLON.Vector3(1, 1, -1);
+    mesh.Vertices[6] = new BABYLON.Vector3(1, -1, -1);
+    mesh.Vertices[7] = new BABYLON.Vector3(-1, -1, -1);
+    mesh.Faces[0] = { A: 0, B: 1, C: 2 };
+    mesh.Faces[1] = { A: 1, B: 2, C: 3 };
+    mesh.Faces[2] = { A: 1, B: 3, C: 6 };
+    mesh.Faces[3] = { A: 1, B: 5, C: 6 };
+    mesh.Faces[4] = { A: 0, B: 1, C: 4 };
+    mesh.Faces[5] = { A: 1, B: 4, C: 5 };
+    mesh.Faces[6] = { A: 2, B: 3, C: 7 };
+    mesh.Faces[7] = { A: 3, B: 6, C: 7 };
+    mesh.Faces[8] = { A: 0, B: 2, C: 7 };
+    mesh.Faces[9] = { A: 0, B: 4, C: 7 };
+    mesh.Faces[10] = { A: 4, B: 5, C: 6 };
+    mesh.Faces[11] = { A: 4, B: 6, C: 7 };
+    render = new engine3D.Render.Canvas(document.getElementById("frontBuffer"));
     mesh3D.LoadJSONFileAsync("https://raw.githubusercontent.com/deltakosh/MVA3DHTML5GameDev/master/Chapter%201/003.%20loading%20meshes%20from%20Blender/monkey.babylon", loadJSONCompleted);
 }
 function loadJSONCompleted(meshesLoaded) {
-    /*
-      The Window.requestAnimationFrame() method tells the browser that you wish to perform an animation and requests
-      that the browser call a specified function to update an animation before the next repaint.
-      The method takes as an argument a callback to be invoked before the repaint.
-    */
-    scene = new engine3D.Scene(meshesLoaded);
-    screen.start(scene);
+    var scene = new engine3D.Scene();
+    scene.add(meshesLoaded, mesh);
+    var camera = new engine3D.Camera.Prospective(0, 0, 0, 0);
+    render.start(scene, camera);
+    this.resize();
+    window.onresize = this.resize;
+    //scene.showConsoleMesh();
+    scene.remove(mesh);
+    scene.showConsoleMesh();
+}
+function resize() {
+    render.setWorkingHeight(window.innerHeight);
+    render.setWorkingWidth(window.innerWidth);
 }
 // <reference path="./lib/babylon.math.ts"/>
 var mesh3D;
@@ -30,9 +60,9 @@ var mesh3D;
         Mesh.CreateMeshesFromJSON = function (jsonObject) {
             var meshes = [];
             for (var meshIndex = 0; meshIndex < jsonObject.meshes.length; meshIndex++) {
-                var mesh = Mesh.createMesh(jsonObject.meshes[meshIndex]);
-                mesh.Position = Mesh.getBlenderPosition(jsonObject, meshIndex);
-                meshes.push(mesh);
+                var mesh_1 = Mesh.createMesh(jsonObject.meshes[meshIndex]);
+                mesh_1.Position = Mesh.getBlenderPosition(jsonObject, meshIndex);
+                meshes.push(mesh_1);
             }
             return meshes;
         };
@@ -109,196 +139,323 @@ var mesh3D;
 })(mesh3D || (mesh3D = {}));
 var engine3D;
 (function (engine3D) {
-    var Device = (function () {
-        function Device(canvas) {
-            this.workingCanvas = canvas;
-            this.workingWidth = canvas.width;
-            this.workingHeight = canvas.height;
-            this.workingContext = this.workingCanvas.getContext("2d");
-        }
-        Device.prototype.setWorkingWidth = function (width) {
-            this.workingWidth = width;
-            this.workingCanvas.width = width;
-        };
-        Device.prototype.setWorkingHeight = function (height) {
-            this.workingHeight = height;
-            this.workingCanvas.height = height;
-        };
-        Device.prototype.getWorkingWidth = function () {
-            return this.workingWidth;
-        };
-        Device.prototype.getWorkingHeight = function () {
-            return this.workingHeight;
-        };
-        // This function is called to clear the back buffer with a specific color
-        Device.prototype.clear = function () {
-            // Clearing with black color by default
-            this.workingContext.clearRect(0, 0, this.workingWidth, this.workingHeight);
-            // once cleared with black pixels, we're getting back the associated image data to 
-            // clear out back buffer
-            this.backbuffer = this.workingContext.getImageData(0, 0, this.workingWidth, this.workingHeight);
-        };
-        // Once everything is ready, we can flush the back buffer
-        // into the front buffer. 
-        Device.prototype.present = function () {
-            this.workingContext.putImageData(this.backbuffer, 0, 0);
-        };
-        // Called to put a pixel on screen at a specific X,Y coordinates
-        Device.prototype.putPixel = function (x, y, color) {
-            this.backbufferdata = this.backbuffer.data;
-            // As we have a 1-D Array for our back buffer
-            // we need to know the equivalent cell index in 1-D based
-            // on the 2D coordinates of the screen
-            // x >> 0 just convert the number to integer.
-            var index = ((x >> 0) + (y >> 0) * this.workingWidth) * 4;
-            // RGBA color space is used by the HTML5 canvas
-            this.backbufferdata[index] = color.r * 255;
-            this.backbufferdata[index + 1] = color.g * 255;
-            this.backbufferdata[index + 2] = color.b * 255;
-            this.backbufferdata[index + 3] = color.a * 255;
-        };
-        // Project takes some 3D coordinates and transform them
-        // in 2D coordinates using the transformation matrix
-        Device.prototype.project = function (coord, transMat) {
-            // transforming the coordinates
-            var point = BABYLON.Vector3.TransformCoordinates(coord, transMat);
-            // The transformed coordinates will be based on coordinate system
-            // starting on the center of the screen. But drawing on screen normally starts
-            // from top left. We then need to transform them again to have x:0, y:0 on top left.
-            var x = point.x * this.workingWidth + this.workingWidth / 2.0 >> 0;
-            var y = -point.y * this.workingHeight + this.workingHeight / 2.0 >> 0;
-            return (new BABYLON.Vector2(x, y));
-        };
-        // drawPoint calls putPixel but does the clipping operation before
-        Device.prototype.drawPoint = function (point) {
-            // Clipping what's visible on screen
-            if (point.x >= 0 && point.y >= 0 && point.x < this.workingWidth
-                && point.y < this.workingHeight) {
-                // Drawing a yellow point
-                this.putPixel(point.x, point.y, new BABYLON.Color4(1 + Math.random() * 10, 1 * Math.random() * 10, 0, 1 * Math.random() * 10));
+    var Render;
+    (function (Render) {
+        var AbstractDraw = (function () {
+            function AbstractDraw() {
             }
-        };
-        // http://www.tutorialspoint.com/computer_graphics/line_generation_algorithm.htm
-        Device.prototype.drawBline = function (point0, point1) {
-            var x0 = point0.x >> 0;
-            var y0 = point0.y >> 0;
-            var x1 = point1.x >> 0;
-            var y1 = point1.y >> 0;
-            var dx = Math.abs(x1 - x0);
-            var dy = Math.abs(y1 - y0);
-            var sx = (x0 < x1) ? 1 : -1;
-            var sy = (y0 < y1) ? 1 : -1;
-            var err = dx - dy;
-            while (true) {
-                this.drawPoint(new BABYLON.Vector2(x0, y0));
-                if ((x0 == x1) && (y0 == y1))
-                    break;
-                var e2 = 2 * err;
-                if (e2 > -dy) {
-                    err -= dy;
-                    x0 += sx;
-                }
-                if (e2 < dx) {
-                    err += dx;
-                    y0 += sy;
-                }
-            }
-        };
-        return Device;
-    }());
-    engine3D.Device = Device;
+            return AbstractDraw;
+        }());
+        Render.AbstractDraw = AbstractDraw;
+    })(Render = engine3D.Render || (engine3D.Render = {}));
 })(engine3D || (engine3D = {}));
 var engine3D;
 (function (engine3D) {
-    var Screen = (function () {
-        function Screen(canvasElement) {
-            var _this = this;
-            this.resize = function () {
-                console.log("cs");
-                _this.device.setWorkingHeight(window.innerHeight);
-                _this.device.setWorkingWidth(window.innerWidth);
-            };
-            // Rendering loop handler
-            this.drawingLoop = function (timestamp) {
-                _this.device.clear();
-                // Doing the various matrix operations
-                _this.render(_this.mera, _this.scene.meshes);
-                // Flushing the back buffer into the front buffer
-                _this.device.present();
-                // Calling the HTML5 rendering loop recursively
-                requestAnimationFrame(_this.drawingLoop);
-            };
-            this.mera = new engine3D.Camera();
-            this.mera.Position = new BABYLON.Vector3(0, 0, 10);
-            this.mera.Target = new BABYLON.Vector3(0, 0, 0);
-            this.device = new engine3D.Device(canvasElement);
-        }
-        // The main method of the engine that re-compute each vertex projection
-        // during each frame
-        Screen.prototype.render = function (camera, meshes) {
-            // Builds a left-handed look-at Matrix
-            var viewMatrix = BABYLON.Matrix.LookAtLH(camera.Position, camera.Target, BABYLON.Vector3.Up());
-            // Creates a left-handed perspective projection matrix based on the field of view
-            var projectionMatrix = BABYLON.Matrix.PerspectiveFovLH(0.78, this.device.getWorkingWidth() / this.device.getWorkingHeight(), 0.01, 1.0);
-            for (var index = 0; index < meshes.length; index++) {
-                // current mesh to work on
-                var cMesh = meshes[index];
-                // Beware to apply rotation before translation
-                var worldMatrix = BABYLON.Matrix.RotationYawPitchRoll(cMesh.Rotation.y, cMesh.Rotation.x, cMesh.Rotation.z)
-                    .multiply(BABYLON.Matrix.Translation(cMesh.Position.x, cMesh.Position.y, cMesh.Position.z));
-                var transformMatrix = worldMatrix.multiply(viewMatrix).multiply(projectionMatrix);
-                for (var indexVertices = 0; indexVertices < cMesh.Vertices.length; indexVertices++) {
-                    // First, we project the 3D coordinates into the 2D space
-                    var projectedPoint = this.device.project(cMesh.Vertices[indexVertices], transformMatrix);
-                    // Then we can draw on screen
-                    this.device.drawPoint(projectedPoint);
-                }
-                for (var indexFaces = 0; indexFaces < cMesh.Faces.length; indexFaces++) {
-                    var currentFace = cMesh.Faces[indexFaces];
-                    var vertexA = cMesh.Vertices[currentFace.A];
-                    var vertexB = cMesh.Vertices[currentFace.B];
-                    var vertexC = cMesh.Vertices[currentFace.C];
-                    var pixelA = this.device.project(vertexA, transformMatrix);
-                    var pixelB = this.device.project(vertexB, transformMatrix);
-                    var pixelC = this.device.project(vertexC, transformMatrix);
-                    this.device.drawBline(pixelA, pixelB);
-                    this.device.drawBline(pixelB, pixelC);
-                    this.device.drawBline(pixelC, pixelA);
-                }
+    var Render;
+    (function (Render) {
+        var AbstractPlatform = (function () {
+            function AbstractPlatform(canvasElement) {
+                this.render = new engine3D.Render.renderToCanvas(canvasElement);
             }
-        };
-        Screen.prototype.start = function (scene) {
-            this.scene = scene;
-            requestAnimationFrame(this.drawingLoop);
-            this.resize();
-            window.onresize = this.resize;
-        };
-        return Screen;
-    }());
-    engine3D.Screen = Screen;
+            AbstractPlatform.prototype.start = function (scene, camera) {
+                this.render.start(camera, scene);
+            };
+            AbstractPlatform.prototype.changeScene = function (scene) {
+            };
+            AbstractPlatform.prototype.changeCamera = function (camera) {
+            };
+            AbstractPlatform.prototype.setWorkingHeight = function (height) {
+                this.render.setWorkingHeight(height);
+            };
+            AbstractPlatform.prototype.setWorkingWidth = function (width) {
+                this.render.setWorkingWidth(width);
+            };
+            return AbstractPlatform;
+        }());
+        Render.AbstractPlatform = AbstractPlatform;
+    })(Render = engine3D.Render || (engine3D.Render = {}));
+})(engine3D || (engine3D = {}));
+var engine3D;
+(function (engine3D) {
+    var Render;
+    (function (Render) {
+        var Canvas = (function (_super) {
+            __extends(Canvas, _super);
+            function Canvas() {
+                _super.apply(this, arguments);
+            }
+            Canvas.prototype.startDrawing = function () {
+            };
+            Canvas.prototype.stop = function () {
+            };
+            return Canvas;
+        }(engine3D.Render.AbstractPlatform));
+        Render.Canvas = Canvas;
+    })(Render = engine3D.Render || (engine3D.Render = {}));
+})(engine3D || (engine3D = {}));
+var engine3D;
+(function (engine3D) {
+    var Render;
+    (function (Render) {
+        var CanvasDraw = (function (_super) {
+            __extends(CanvasDraw, _super);
+            function CanvasDraw(canvasElement) {
+                _super.call(this);
+                this.workingCanvas = canvasElement;
+                this.workingWidth = canvasElement.width;
+                this.workingHeight = canvasElement.height;
+                this.workingContext = this.workingCanvas.getContext("2d");
+            }
+            CanvasDraw.prototype.setWorkingWidth = function (width) {
+                this.workingWidth = width;
+                this.workingCanvas.width = width;
+            };
+            CanvasDraw.prototype.setWorkingHeight = function (height) {
+                this.workingHeight = height;
+                this.workingCanvas.height = height;
+            };
+            CanvasDraw.prototype.getWorkingWidth = function () {
+                return this.workingWidth;
+            };
+            CanvasDraw.prototype.getWorkingHeight = function () {
+                return this.workingHeight;
+            };
+            // This function is called to clear the back buffer with a specific color
+            CanvasDraw.prototype.clear = function () {
+                // Clearing with black color by default
+                this.workingContext.clearRect(0, 0, this.workingWidth, this.workingHeight);
+                // once cleared with black pixels, we're getting back the associated image data to 
+                // clear out back buffer
+                this.backbuffer = this.workingContext.createImageData(this.workingWidth, this.workingHeight);
+            };
+            // Once everything is ready, we can flush the back buffer
+            // into the front buffer. 
+            CanvasDraw.prototype.present = function () {
+                this.workingContext.putImageData(this.backbuffer, 0, 0);
+            };
+            // Called to put a pixel on screen at a specific X,Y coordinates
+            // rgba pass individual for performance reasons. 
+            CanvasDraw.prototype.putPixel = function (x, y, r, g, b, a) {
+                this.backbufferdata = this.backbuffer.data;
+                // As we have a 1-D Array for our back buffer
+                // we need to know the equivalent cell index in 1-D based
+                // on the 2D coordinates of the screen
+                // x >> 0 just convert the number to integer.
+                var index = (x + y * this.workingWidth) * 4;
+                // RGBA color space is used by the HTML5 canvas
+                this.backbufferdata[index] = r * 255;
+                this.backbufferdata[index + 1] = g * 255;
+                this.backbufferdata[index + 2] = b * 255;
+                this.backbufferdata[index + 3] = a * 255;
+            };
+            // Project takes some 3D coordinates and transform them
+            // in 2D coordinates using the transformation matrix
+            CanvasDraw.prototype.project = function (coord, transMat) {
+                // transforming the coordinates
+                var point = BABYLON.Vector3.TransformCoordinates(coord, transMat);
+                // The transformed coordinates will be based on coordinate system
+                // starting on the center of the screen. But drawing on screen normally starts
+                // from top left. We then need to transform them again to have x:0, y:0 on top left.
+                var x = point.x * this.workingWidth + this.workingWidth / 2.0 >> 0;
+                var y = -point.y * this.workingHeight + this.workingHeight / 2.0 >> 0;
+                return (new BABYLON.Vector2(x, y));
+            };
+            // drawPoint calls putPixel but does the clipping operation before
+            CanvasDraw.prototype.drawPoint = function (point) {
+                // Clipping what's visible on screen
+                if (point.x >= 0 && point.y >= 0 && point.x < this.workingWidth
+                    && point.y < this.workingHeight) {
+                    // Drawing a yellow point
+                    this.putPixel(point.x, point.y, 255, 255, 0, 255);
+                }
+            };
+            // http://www.tutorialspoint.com/computer_graphics/line_generation_algorithm.htm
+            CanvasDraw.prototype.drawBline = function (point0, point1) {
+                var dx = Math.abs(point1.x - point0.x);
+                var dy = Math.abs(point1.y - point0.y);
+                var sx = (point0.x < point1.x) ? 1 : -1;
+                var sy = (point0.y < point1.y) ? 1 : -1;
+                var err = dx - dy;
+                while (true) {
+                    this.drawPoint(new BABYLON.Vector2(point0.x, point0.y));
+                    if ((point0.x == point1.x) && (point0.y == point1.y))
+                        break;
+                    var e2 = 2 * err;
+                    if (e2 > -dy) {
+                        err -= dy;
+                        point0.x += sx;
+                    }
+                    if (e2 < dx) {
+                        err += dx;
+                        point0.y += sy;
+                    }
+                }
+            };
+            return CanvasDraw;
+        }(engine3D.Render.AbstractDraw));
+        Render.CanvasDraw = CanvasDraw;
+    })(Render = engine3D.Render || (engine3D.Render = {}));
+})(engine3D || (engine3D = {}));
+var engine3D;
+(function (engine3D) {
+    var Render;
+    (function (Render) {
+        var renderToCanvas = (function () {
+            function renderToCanvas(canvasElement) {
+                var _this = this;
+                this.drawingLoop = function (timestamp) {
+                    _this.canvasDraw.clear();
+                    // Doing the various matrix operations
+                    _this.render();
+                    // Flushing the back buffer into the front buffer
+                    _this.canvasDraw.present();
+                    // Calling the HTML5 rendering loop recursively
+                    // TODO NOT recursively
+                    requestAnimationFrame(_this.drawingLoop);
+                };
+                this.canvasDraw = new engine3D.Render.CanvasDraw(canvasElement);
+            }
+            renderToCanvas.prototype.start = function (camera, scene) {
+                this.camera = camera;
+                this.scene = scene;
+                this.requestID = requestAnimationFrame(this.drawingLoop);
+            };
+            renderToCanvas.prototype.pause = function () {
+                window.cancelAnimationFrame(this.requestID);
+            };
+            renderToCanvas.prototype.setWorkingHeight = function (height) {
+                this.canvasDraw.setWorkingHeight(height);
+            };
+            renderToCanvas.prototype.setWorkingWidth = function (width) {
+                this.canvasDraw.setWorkingWidth(width);
+            };
+            renderToCanvas.prototype.render = function () {
+                var meshes = this.scene.meshes;
+                // Builds a left-handed look-at Matrix
+                var viewMatrix = BABYLON.Matrix.LookAtLH(this.camera.Position, this.camera.Target, BABYLON.Vector3.Up());
+                // Creates a left-handed perspective projection matrix based on the field of view
+                var projectionMatrix = BABYLON.Matrix.PerspectiveFovLH(0.78, this.canvasDraw.getWorkingWidth() / this.canvasDraw.getWorkingHeight(), 0.01, 1.0);
+                for (var index = 0; index < meshes.length; index++) {
+                    // current mesh to work on
+                    var cMesh = meshes[index];
+                    meshes[index].Rotation.x += 0.01;
+                    meshes[index].Rotation.y += 0.01;
+                    // Beware to apply rotation before translation
+                    var worldMatrix = BABYLON.Matrix.RotationYawPitchRoll(cMesh.Rotation.y, cMesh.Rotation.x, cMesh.Rotation.z)
+                        .multiply(BABYLON.Matrix.Translation(cMesh.Position.x, cMesh.Position.y, cMesh.Position.z));
+                    var transformMatrix = worldMatrix.multiply(viewMatrix).multiply(projectionMatrix);
+                    for (var indexVertices = 0; indexVertices < cMesh.Vertices.length; indexVertices++) {
+                        // First, we project the 3D coordinates into the 2D space
+                        var projectedPoint = this.canvasDraw.project(cMesh.Vertices[indexVertices], transformMatrix);
+                        // Then we can draw on screen
+                        this.canvasDraw.drawPoint(projectedPoint);
+                    }
+                    for (var indexFaces = 0; indexFaces < cMesh.Faces.length; indexFaces++) {
+                        var currentFace = cMesh.Faces[indexFaces];
+                        var vertexA = cMesh.Vertices[currentFace.A];
+                        var vertexB = cMesh.Vertices[currentFace.B];
+                        var vertexC = cMesh.Vertices[currentFace.C];
+                        var pixelA = this.canvasDraw.project(vertexA, transformMatrix);
+                        var pixelB = this.canvasDraw.project(vertexB, transformMatrix);
+                        var pixelC = this.canvasDraw.project(vertexC, transformMatrix);
+                        this.canvasDraw.drawBline(pixelA, pixelB);
+                        this.canvasDraw.drawBline(pixelB, pixelC);
+                        this.canvasDraw.drawBline(pixelC, pixelA);
+                    }
+                }
+            };
+            return renderToCanvas;
+        }());
+        Render.renderToCanvas = renderToCanvas;
+    })(Render = engine3D.Render || (engine3D.Render = {}));
 })(engine3D || (engine3D = {}));
 var engine3D;
 (function (engine3D) {
     var Scene = (function () {
-        function Scene(meshes) {
-            this.meshes = [];
-            this.meshes = meshes;
+        function Scene(object) {
+            this._meshes = [];
+            this._meshes = [];
+            if (object)
+                this.add(object);
         }
+        Object.defineProperty(Scene.prototype, "meshes", {
+            get: function () {
+                return this._meshes;
+            },
+            set: function (value) {
+                this._meshes = value;
+            },
+            enumerable: true,
+            configurable: true
+        });
         Scene.prototype.add = function (object) {
-            if (arguments.length > 1) {
-                for (var i = 0; i < arguments.length; i++) {
-                    this.add(arguments[i]);
-                }
-                return this;
+            var _this = this;
+            var rest = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                rest[_i - 1] = arguments[_i];
             }
-            if (object === this) {
-                // TODO add a scene to a scene in a certain place
-                console.error("dont add a scene in a scene", object);
-                return this;
+            if (arguments.length > 1) {
+                this._CallCallbackForEachArgument(arguments, this.add);
+            }
+            else if (this._isMesh(object)) {
+                this.meshes.push(object);
+            }
+            else if (this._isArray(object)) {
+                object.forEach(function (item) {
+                    if (_this._isMesh(item)) {
+                        _this.meshes.push(item);
+                    }
+                });
+            }
+            else {
+                console.warn("not accepted object: " + object);
+            }
+            return this;
+        };
+        Scene.prototype.showConsoleMesh = function () {
+            console.log(this._meshes);
+        };
+        Scene.prototype._deleteMesh = function (object) {
+            var index = this._meshes.indexOf(object);
+            if (index > -1) {
+                this._meshes.splice(index, 1);
             }
         };
         Scene.prototype.remove = function (object) {
+            var _this = this;
+            var rest = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                rest[_i - 1] = arguments[_i];
+            }
+            if (arguments.length > 1) {
+                this._CallCallbackForEachArgument(arguments, this.remove);
+            }
+            else if (this._isMesh(object)) {
+                this._deleteMesh(object);
+            }
+            else if (this._isArray(object)) {
+                object.forEach(function (item) {
+                    if (_this._isMesh(item)) {
+                        _this._deleteMesh(item);
+                    }
+                });
+            }
+            else {
+                console.warn("not accepted object: " + object);
+            }
             return this;
+        };
+        Scene.prototype._isMesh = function (object) {
+            return object instanceof mesh3D.Mesh;
+        };
+        Scene.prototype._isArray = function (object) {
+            return object instanceof Array;
+        };
+        Scene.prototype._CallCallbackForEachArgument = function (arg, callback) {
+            for (var i = 0; i < arg.length; i++) {
+                callback.call(this, arg[i]);
+            }
+            return arg.length > 1;
         };
         return Scene;
     }());
@@ -306,14 +463,67 @@ var engine3D;
 })(engine3D || (engine3D = {}));
 var engine3D;
 (function (engine3D) {
-    var Camera = (function () {
-        function Camera() {
-            this.Position = BABYLON.Vector3.Zero();
-            this.Target = BABYLON.Vector3.Zero();
-        }
-        return Camera;
-    }());
-    engine3D.Camera = Camera;
+    var Camera;
+    (function (Camera) {
+        var AbstractCamera = (function () {
+            function AbstractCamera() {
+            }
+            Object.defineProperty(AbstractCamera.prototype, "Position", {
+                get: function () {
+                    return this._Position;
+                },
+                set: function (value) {
+                    this._Position = value;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(AbstractCamera.prototype, "Target", {
+                get: function () {
+                    return this._Target;
+                },
+                set: function (value) {
+                    this._Target = value;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            return AbstractCamera;
+        }());
+        Camera.AbstractCamera = AbstractCamera;
+    })(Camera = engine3D.Camera || (engine3D.Camera = {}));
+})(engine3D || (engine3D = {}));
+var engine3D;
+(function (engine3D) {
+    var Camera;
+    (function (Camera) {
+        var Orthographic = (function (_super) {
+            __extends(Orthographic, _super);
+            function Orthographic(fov, aspect, near, far) {
+                _super.call(this);
+                this._Position = BABYLON.Vector3.Zero();
+                this._Target = BABYLON.Vector3.Zero();
+            }
+            return Orthographic;
+        }(engine3D.Camera.AbstractCamera));
+        Camera.Orthographic = Orthographic;
+    })(Camera = engine3D.Camera || (engine3D.Camera = {}));
+})(engine3D || (engine3D = {}));
+var engine3D;
+(function (engine3D) {
+    var Camera;
+    (function (Camera) {
+        var Prospective = (function (_super) {
+            __extends(Prospective, _super);
+            function Prospective(fov, aspect, near, far) {
+                _super.call(this);
+                this._Position = new BABYLON.Vector3(0, 0, 10);
+                this._Target = new BABYLON.Vector3(0, 0, 0);
+            }
+            return Prospective;
+        }(engine3D.Camera.AbstractCamera));
+        Camera.Prospective = Prospective;
+    })(Camera = engine3D.Camera || (engine3D.Camera = {}));
 })(engine3D || (engine3D = {}));
 var BABYLON;
 (function (BABYLON) {
@@ -466,6 +676,7 @@ var BABYLON;
         Vector3.Copy = function (source) {
             return new Vector3(source.x, source.y, source.z);
         };
+        // Transforms a vector into a new vector
         Vector3.TransformCoordinates = function (vector, transformation) {
             var x = (vector.x * transformation.m[0]) + (vector.y * transformation.m[4]) + (vector.z * transformation.m[8]) + transformation.m[12];
             var y = (vector.x * transformation.m[1]) + (vector.y * transformation.m[5]) + (vector.z * transformation.m[9]) + transformation.m[13];

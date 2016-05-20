@@ -162,6 +162,7 @@ namespace BABYLON {
         static Copy(source: Vector3): Vector3 {
             return new Vector3(source.x, source.y, source.z);
         }
+        // Transforms a vector into a new vector
         static TransformCoordinates(vector: Vector3, transformation): Vector3 {
             var x = (vector.x * transformation.m[0]) + (vector.y * transformation.m[4]) + (vector.z * transformation.m[8]) + transformation.m[12];
             var y = (vector.x * transformation.m[1]) + (vector.y * transformation.m[5]) + (vector.z * transformation.m[9]) + transformation.m[13];

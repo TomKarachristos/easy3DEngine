@@ -1,8 +1,8 @@
-declare var canvas: HTMLCanvasElement;
-declare var screen: engine3D.Screen;
-declare var scene: engine3D.Scene;
+declare var render: engine3D.Render.Canvas;
+declare var mesh: any;
 declare function init(): void;
 declare function loadJSONCompleted(meshesLoaded: mesh3D.Mesh[]): void;
+declare function resize(): void;
 declare namespace mesh3D {
     interface Face {
         A: number;
@@ -26,51 +26,110 @@ declare namespace mesh3D {
     function LoadJSONFileAsync(fileName: string, callback: (result: Mesh[]) => any): void;
 }
 declare namespace engine3D {
-    class Device {
-        private backbuffer;
-        private workingCanvas;
-        private workingContext;
-        private workingWidth;
-        private workingHeight;
-        private backbufferdata;
-        constructor(canvas: HTMLCanvasElement);
-        setWorkingWidth(width: number): void;
-        setWorkingHeight(height: number): void;
-        getWorkingWidth(): number;
-        getWorkingHeight(): number;
-        clear(): void;
-        present(): void;
-        putPixel(x: number, y: number, color: BABYLON.Color4): void;
-        project(coord: BABYLON.Vector3, transMat: BABYLON.Matrix): BABYLON.Vector2;
-        drawPoint(point: BABYLON.Vector2): void;
-        drawBline(point0: BABYLON.Vector2, point1: BABYLON.Vector2): void;
+    namespace Render {
+        abstract class AbstractDraw {
+        }
     }
 }
 declare namespace engine3D {
-    class Screen {
-        private device;
-        private mera;
-        private scene;
-        constructor(canvasElement: HTMLCanvasElement);
-        private resize;
-        private render(camera, meshes);
-        drawingLoop: (timestamp: any) => void;
-        start(scene: engine3D.Scene): void;
+    namespace Render {
+        abstract class AbstractPlatform {
+            protected render: engine3D.Render.renderToCanvas;
+            constructor(canvasElement: HTMLCanvasElement);
+            start(scene: engine3D.Scene, camera: engine3D.Camera.AbstractCamera): void;
+            protected abstract startDrawing(): void;
+            abstract stop(): void;
+            changeScene(scene: engine3D.Scene): void;
+            changeCamera(camera: engine3D.Camera.AbstractCamera): void;
+            setWorkingHeight(height: number): void;
+            setWorkingWidth(width: number): void;
+        }
+    }
+}
+declare namespace engine3D {
+    namespace Render {
+        class Canvas extends engine3D.Render.AbstractPlatform {
+            protected startDrawing(): void;
+            stop(): void;
+        }
+    }
+}
+declare namespace engine3D {
+    namespace Render {
+        class CanvasDraw extends engine3D.Render.AbstractDraw {
+            private backbuffer;
+            private workingCanvas;
+            private workingContext;
+            private workingWidth;
+            private workingHeight;
+            private backbufferdata;
+            constructor(canvasElement: HTMLCanvasElement);
+            setWorkingWidth(width: number): void;
+            setWorkingHeight(height: number): void;
+            getWorkingWidth(): number;
+            getWorkingHeight(): number;
+            clear(): void;
+            present(): void;
+            putPixel(x: number, y: number, r: any, g: any, b: any, a: any): void;
+            project(coord: BABYLON.Vector3, transMat: BABYLON.Matrix): BABYLON.Vector2;
+            drawPoint(point: BABYLON.Vector2): void;
+            drawBline(point0: BABYLON.Vector2, point1: BABYLON.Vector2): void;
+        }
+    }
+}
+declare namespace engine3D {
+    namespace Render {
+        class renderToCanvas {
+            private canvasDraw;
+            private camera;
+            private scene;
+            private requestID;
+            constructor(canvasElement: HTMLCanvasElement);
+            start(camera: engine3D.Camera.AbstractCamera, scene: engine3D.Scene): void;
+            pause(): void;
+            drawingLoop: (timestamp: any) => void;
+            setWorkingHeight(height: number): void;
+            setWorkingWidth(width: number): void;
+            private render();
+        }
     }
 }
 declare namespace engine3D {
     class Scene {
+        private _meshes;
         meshes: mesh3D.Mesh[];
-        constructor(meshes: mesh3D.Mesh[]);
-        add(object: any): this;
-        remove(object: any): this;
+        constructor(object?: any);
+        add(object: any, ...rest: any[]): Scene;
+        showConsoleMesh(): void;
+        private _deleteMesh(object);
+        remove(object: any, ...rest: any[]): Scene;
+        private _isMesh(object);
+        private _isArray(object);
+        private _CallCallbackForEachArgument(arg, callback);
     }
 }
 declare namespace engine3D {
-    class Camera {
-        private Position;
-        private Target;
-        constructor();
+    namespace Camera {
+        abstract class AbstractCamera {
+            protected _Position: BABYLON.Vector3;
+            Position: BABYLON.Vector3;
+            protected _Target: BABYLON.Vector3;
+            Target: BABYLON.Vector3;
+        }
+    }
+}
+declare namespace engine3D {
+    namespace Camera {
+        class Orthographic extends engine3D.Camera.AbstractCamera {
+            constructor(fov: number, aspect: number, near: number, far: number);
+        }
+    }
+}
+declare namespace engine3D {
+    namespace Camera {
+        class Prospective extends engine3D.Camera.AbstractCamera {
+            constructor(fov: number, aspect: number, near: number, far: number);
+        }
     }
 }
 declare namespace BABYLON {
