@@ -1,17 +1,22 @@
 namespace engine3D{
   export namespace Render{
     export abstract class AbstractPlatform{
-      protected render: engine3D.Render.renderToCanvas;
+      protected render: engine3D.Render.RenderToCanvas;
+      public camera: engine3D.Camera.AbstractCamera;
+      public scene: engine3D.Scene;
        
       constructor(canvasElement:HTMLCanvasElement) {
-        this.render = new engine3D.Render.renderToCanvas(canvasElement);
+        this.render = new engine3D.Render.RenderToCanvas(canvasElement);
       }
       
       public start(scene: engine3D.Scene, camera: engine3D.Camera.AbstractCamera): void{
         this.render.start(camera,scene);
       }
-      protected abstract startDrawing(): void;
-      public abstract stop(): void;
+      
+      public stop(): void{
+        this.render.pause();
+      }
+      
       public changeScene(scene: engine3D.Scene): void{
       }
       public changeCamera(camera: engine3D.Camera.AbstractCamera): void{

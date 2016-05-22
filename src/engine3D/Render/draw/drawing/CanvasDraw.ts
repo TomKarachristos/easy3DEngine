@@ -1,9 +1,7 @@
 namespace engine3D{
   export namespace Render {
     export class CanvasDraw extends engine3D.Render.AbstractDraw{
-      // the back buffer size is equal to the number of pixels to draw
-      // on screen (width*height) * 4 (R,G,B & Alpha values). 
-      private backbuffer: ImageData;
+      private backbuffer: ImageData; // (width*height) * 4 (R,G,B & Alpha values). 
       private workingCanvas: HTMLCanvasElement;
       private workingContext: CanvasRenderingContext2D;
       private workingWidth: number;

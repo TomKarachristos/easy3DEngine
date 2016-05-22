@@ -4,139 +4,87 @@ var __extends = (this && this.__extends) || function (d, b) {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var render;
-var mesh;
 document.addEventListener("DOMContentLoaded", init, false);
 function init() {
-    mesh = new mesh3D.Mesh("Cube", 8, 12);
-    mesh.Vertices[0] = new BABYLON.Vector3(-1, 1, 1);
-    mesh.Vertices[1] = new BABYLON.Vector3(1, 1, 1);
-    mesh.Vertices[2] = new BABYLON.Vector3(-1, -1, 1);
-    mesh.Vertices[3] = new BABYLON.Vector3(1, -1, 1);
-    mesh.Vertices[4] = new BABYLON.Vector3(-1, 1, -1);
-    mesh.Vertices[5] = new BABYLON.Vector3(1, 1, -1);
-    mesh.Vertices[6] = new BABYLON.Vector3(1, -1, -1);
-    mesh.Vertices[7] = new BABYLON.Vector3(-1, -1, -1);
-    mesh.Faces[0] = { A: 0, B: 1, C: 2 };
-    mesh.Faces[1] = { A: 1, B: 2, C: 3 };
-    mesh.Faces[2] = { A: 1, B: 3, C: 6 };
-    mesh.Faces[3] = { A: 1, B: 5, C: 6 };
-    mesh.Faces[4] = { A: 0, B: 1, C: 4 };
-    mesh.Faces[5] = { A: 1, B: 4, C: 5 };
-    mesh.Faces[6] = { A: 2, B: 3, C: 7 };
-    mesh.Faces[7] = { A: 3, B: 6, C: 7 };
-    mesh.Faces[8] = { A: 0, B: 2, C: 7 };
-    mesh.Faces[9] = { A: 0, B: 4, C: 7 };
-    mesh.Faces[10] = { A: 4, B: 5, C: 6 };
-    mesh.Faces[11] = { A: 4, B: 6, C: 7 };
     render = new engine3D.Render.Canvas(document.getElementById("frontBuffer"));
-    mesh3D.LoadJSONFileAsync("https://raw.githubusercontent.com/deltakosh/MVA3DHTML5GameDev/master/Chapter%201/003.%20loading%20meshes%20from%20Blender/monkey.babylon", loadJSONCompleted);
+    mesh3D.Utils.LoadJSONFileAsync("https://raw.githubusercontent.com/deltakosh/MVA3DHTML5GameDev/master/Chapter%201/003.%20loading%20meshes%20from%20Blender/monkey.babylon", loadJSONCompleted);
 }
 function loadJSONCompleted(meshesLoaded) {
     var scene = new engine3D.Scene();
-    scene.add(meshesLoaded, mesh);
+    scene.add(meshesLoaded);
     var camera = new engine3D.Camera.Prospective(0, 0, 0, 0);
     render.start(scene, camera);
     this.resize();
     window.onresize = this.resize;
-    //scene.showConsoleMesh();
-    scene.remove(mesh);
-    scene.showConsoleMesh();
 }
 function resize() {
     render.setWorkingHeight(window.innerHeight);
     render.setWorkingWidth(window.innerWidth);
 }
-// <reference path="./lib/babylon.math.ts"/>
-var mesh3D;
-(function (mesh3D) {
-    var Mesh = (function () {
-        function Mesh(name, verticesCount, facesCount) {
-            this.name = name;
-            this.Vertices = new Array(verticesCount);
-            this.Faces = new Array(facesCount);
-            this.Rotation = BABYLON.Vector3.Zero();
-            this.Position = BABYLON.Vector3.Zero();
-        }
-        Mesh.CreateMeshesFromJSON = function (jsonObject) {
-            var meshes = [];
-            for (var meshIndex = 0; meshIndex < jsonObject.meshes.length; meshIndex++) {
-                var mesh_1 = Mesh.createMesh(jsonObject.meshes[meshIndex]);
-                mesh_1.Position = Mesh.getBlenderPosition(jsonObject, meshIndex);
-                meshes.push(mesh_1);
+var engine3D;
+(function (engine3D) {
+    var Camera;
+    (function (Camera) {
+        var AbstractCamera = (function () {
+            function AbstractCamera() {
             }
-            return meshes;
-        };
-        Mesh.createMesh = function (meshJson) {
-            var verticesArray = meshJson.vertices;
-            var indicesArray = meshJson.indices;
-            var verticesStep = Mesh.getverticesStepIndex(meshJson);
-            var verticesCount = verticesArray.length / verticesStep;
-            var facesCount = indicesArray.length / 3;
-            var mesh = new Mesh(meshJson.name, verticesCount, facesCount);
-            Mesh.fillingFaces(mesh, indicesArray);
-            Mesh.fillingVertices(mesh, verticesArray, verticesStep);
-            return mesh;
-        };
-        // Getting the position you've set in Blender
-        Mesh.getBlenderPosition = function (jsonObject, meshIndex) {
-            var position = jsonObject.meshes[meshIndex].position;
-            return new BABYLON.Vector3(position[0], position[1], position[2]);
-        };
-        // Depending of the number of texture's coordinates per vertex
-        // we're jumping in the vertices array  by 6, 8 & 10 windows frame
-        Mesh.getverticesStepIndex = function (meshJson) {
-            switch (meshJson.uvCount) {
-                case 0:
-                    return 6;
-                case 1:
-                    return 8;
-                case 2:
-                    return 10;
-                default:
-                    return 1;
+            Object.defineProperty(AbstractCamera.prototype, "Position", {
+                get: function () {
+                    return this._Position;
+                },
+                set: function (value) {
+                    this._Position = value;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(AbstractCamera.prototype, "Target", {
+                get: function () {
+                    return this._Target;
+                },
+                set: function (value) {
+                    this._Target = value;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            return AbstractCamera;
+        }());
+        Camera.AbstractCamera = AbstractCamera;
+    })(Camera = engine3D.Camera || (engine3D.Camera = {}));
+})(engine3D || (engine3D = {}));
+var engine3D;
+(function (engine3D) {
+    var Camera;
+    (function (Camera) {
+        var Orthographic = (function (_super) {
+            __extends(Orthographic, _super);
+            function Orthographic(fov, aspect, near, far) {
+                _super.call(this);
+                this._Position = BABYLON.Vector3.Zero();
+                this._Target = BABYLON.Vector3.Zero();
             }
-        };
-        Mesh.fillingFaces = function (mesh, indicesArray) {
-            // number of faces is logically the size of the array divided by 3 (A, B, C)
-            for (var index = 0, facesCount = indicesArray.length / 3; index < facesCount; index++) {
-                var a = indicesArray[index * 3];
-                var b = indicesArray[index * 3 + 1];
-                var c = indicesArray[index * 3 + 2];
-                mesh.Faces[index] = {
-                    A: a,
-                    B: b,
-                    C: c
-                };
+            return Orthographic;
+        }(engine3D.Camera.AbstractCamera));
+        Camera.Orthographic = Orthographic;
+    })(Camera = engine3D.Camera || (engine3D.Camera = {}));
+})(engine3D || (engine3D = {}));
+var engine3D;
+(function (engine3D) {
+    var Camera;
+    (function (Camera) {
+        var Prospective = (function (_super) {
+            __extends(Prospective, _super);
+            function Prospective(fov, aspect, near, far) {
+                _super.call(this);
+                this._Position = new BABYLON.Vector3(0, 0, 10);
+                this._Target = new BABYLON.Vector3(0, 0, 0);
             }
-        };
-        Mesh.fillingVertices = function (mesh, verticesArray, verticesStep) {
-            for (var index = 0, verticesCount = verticesArray.length / verticesStep; index < verticesCount; index++) {
-                var x = verticesArray[index * verticesStep];
-                var y = verticesArray[index * verticesStep + 1];
-                var z = verticesArray[index * verticesStep + 2];
-                mesh.Vertices[index] = new BABYLON.Vector3(x, y, z);
-            }
-        };
-        return Mesh;
-    }());
-    mesh3D.Mesh = Mesh;
-    // Loading the JSON file in an asynchronous manner and
-    // calling back with the function passed providing the array of meshes loaded
-    function LoadJSONFileAsync(fileName, callback) {
-        var jsonObject = {};
-        var xmlhttp = new XMLHttpRequest();
-        xmlhttp.open("GET", fileName, true);
-        var that = this;
-        xmlhttp.onreadystatechange = function () {
-            if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-                jsonObject = JSON.parse(xmlhttp.responseText);
-                callback(Mesh.CreateMeshesFromJSON(jsonObject));
-            }
-        };
-        xmlhttp.send(null);
-    }
-    mesh3D.LoadJSONFileAsync = LoadJSONFileAsync;
-})(mesh3D || (mesh3D = {}));
+            return Prospective;
+        }(engine3D.Camera.AbstractCamera));
+        Camera.Prospective = Prospective;
+    })(Camera = engine3D.Camera || (engine3D.Camera = {}));
+})(engine3D || (engine3D = {}));
 var engine3D;
 (function (engine3D) {
     var Render;
@@ -147,50 +95,6 @@ var engine3D;
             return AbstractDraw;
         }());
         Render.AbstractDraw = AbstractDraw;
-    })(Render = engine3D.Render || (engine3D.Render = {}));
-})(engine3D || (engine3D = {}));
-var engine3D;
-(function (engine3D) {
-    var Render;
-    (function (Render) {
-        var AbstractPlatform = (function () {
-            function AbstractPlatform(canvasElement) {
-                this.render = new engine3D.Render.renderToCanvas(canvasElement);
-            }
-            AbstractPlatform.prototype.start = function (scene, camera) {
-                this.render.start(camera, scene);
-            };
-            AbstractPlatform.prototype.changeScene = function (scene) {
-            };
-            AbstractPlatform.prototype.changeCamera = function (camera) {
-            };
-            AbstractPlatform.prototype.setWorkingHeight = function (height) {
-                this.render.setWorkingHeight(height);
-            };
-            AbstractPlatform.prototype.setWorkingWidth = function (width) {
-                this.render.setWorkingWidth(width);
-            };
-            return AbstractPlatform;
-        }());
-        Render.AbstractPlatform = AbstractPlatform;
-    })(Render = engine3D.Render || (engine3D.Render = {}));
-})(engine3D || (engine3D = {}));
-var engine3D;
-(function (engine3D) {
-    var Render;
-    (function (Render) {
-        var Canvas = (function (_super) {
-            __extends(Canvas, _super);
-            function Canvas() {
-                _super.apply(this, arguments);
-            }
-            Canvas.prototype.startDrawing = function () {
-            };
-            Canvas.prototype.stop = function () {
-            };
-            return Canvas;
-        }(engine3D.Render.AbstractPlatform));
-        Render.Canvas = Canvas;
     })(Render = engine3D.Render || (engine3D.Render = {}));
 })(engine3D || (engine3D = {}));
 var engine3D;
@@ -299,74 +203,156 @@ var engine3D;
 var engine3D;
 (function (engine3D) {
     var Render;
-    (function (Render) {
-        var renderToCanvas = (function () {
-            function renderToCanvas(canvasElement) {
-                var _this = this;
-                this.drawingLoop = function (timestamp) {
-                    _this.canvasDraw.clear();
-                    // Doing the various matrix operations
-                    _this.render();
-                    // Flushing the back buffer into the front buffer
-                    _this.canvasDraw.present();
-                    // Calling the HTML5 rendering loop recursively
-                    // TODO NOT recursively
-                    requestAnimationFrame(_this.drawingLoop);
-                };
-                this.canvasDraw = new engine3D.Render.CanvasDraw(canvasElement);
+    (function (Render_1) {
+        var Render = (function () {
+            function Render(CanvasDraw) {
+                this.canvasDraw = CanvasDraw;
             }
-            renderToCanvas.prototype.start = function (camera, scene) {
-                this.camera = camera;
-                this.scene = scene;
-                this.requestID = requestAnimationFrame(this.drawingLoop);
-            };
-            renderToCanvas.prototype.pause = function () {
-                window.cancelAnimationFrame(this.requestID);
-            };
-            renderToCanvas.prototype.setWorkingHeight = function (height) {
-                this.canvasDraw.setWorkingHeight(height);
-            };
-            renderToCanvas.prototype.setWorkingWidth = function (width) {
-                this.canvasDraw.setWorkingWidth(width);
-            };
-            renderToCanvas.prototype.render = function () {
-                var meshes = this.scene.meshes;
+            Render.prototype.doIt = function (camera, scene) {
+                var meshes = scene.meshes;
                 // Builds a left-handed look-at Matrix
-                var viewMatrix = BABYLON.Matrix.LookAtLH(this.camera.Position, this.camera.Target, BABYLON.Vector3.Up());
+                var viewMatrix = BABYLON.Matrix.LookAtLH(camera.Position, camera.Target, BABYLON.Vector3.Up());
                 // Creates a left-handed perspective projection matrix based on the field of view
                 var projectionMatrix = BABYLON.Matrix.PerspectiveFovLH(0.78, this.canvasDraw.getWorkingWidth() / this.canvasDraw.getWorkingHeight(), 0.01, 1.0);
                 for (var index = 0; index < meshes.length; index++) {
                     // current mesh to work on
                     var cMesh = meshes[index];
-                    meshes[index].Rotation.x += 0.01;
-                    meshes[index].Rotation.y += 0.01;
+                    this.animation(meshes, index);
                     // Beware to apply rotation before translation
-                    var worldMatrix = BABYLON.Matrix.RotationYawPitchRoll(cMesh.Rotation.y, cMesh.Rotation.x, cMesh.Rotation.z)
-                        .multiply(BABYLON.Matrix.Translation(cMesh.Position.x, cMesh.Position.y, cMesh.Position.z));
-                    var transformMatrix = worldMatrix.multiply(viewMatrix).multiply(projectionMatrix);
-                    for (var indexVertices = 0; indexVertices < cMesh.Vertices.length; indexVertices++) {
-                        // First, we project the 3D coordinates into the 2D space
-                        var projectedPoint = this.canvasDraw.project(cMesh.Vertices[indexVertices], transformMatrix);
-                        // Then we can draw on screen
-                        this.canvasDraw.drawPoint(projectedPoint);
-                    }
-                    for (var indexFaces = 0; indexFaces < cMesh.Faces.length; indexFaces++) {
-                        var currentFace = cMesh.Faces[indexFaces];
-                        var vertexA = cMesh.Vertices[currentFace.A];
-                        var vertexB = cMesh.Vertices[currentFace.B];
-                        var vertexC = cMesh.Vertices[currentFace.C];
-                        var pixelA = this.canvasDraw.project(vertexA, transformMatrix);
-                        var pixelB = this.canvasDraw.project(vertexB, transformMatrix);
-                        var pixelC = this.canvasDraw.project(vertexC, transformMatrix);
-                        this.canvasDraw.drawBline(pixelA, pixelB);
-                        this.canvasDraw.drawBline(pixelB, pixelC);
-                        this.canvasDraw.drawBline(pixelC, pixelA);
-                    }
+                    var worldMatrix = this.getWorldMatrix(cMesh);
+                    var transformMatrix = this.getTransformMatrix(worldMatrix, viewMatrix, projectionMatrix);
+                    this.projectVerticlesToScreen(cMesh, transformMatrix);
+                    this.projectFacesToScreen(cMesh, transformMatrix);
                 }
             };
-            return renderToCanvas;
+            Render.prototype.projectVerticlesToScreen = function (cMesh, transformMatrix) {
+                for (var indexVertices = 0; indexVertices < cMesh.Vertices.length; indexVertices++) {
+                    // First, we project the 3D coordinates into the 2D space
+                    var projectedPoint = this.canvasDraw.project(cMesh.Vertices[indexVertices], transformMatrix);
+                    // Then we can draw on screen
+                    this.canvasDraw.drawPoint(projectedPoint);
+                }
+            };
+            Render.prototype.projectFacesToScreen = function (cMesh, transformMatrix) {
+                for (var indexFaces = 0; indexFaces < cMesh.Faces.length; indexFaces++) {
+                    var currentFace = cMesh.Faces[indexFaces];
+                    var vertexA = cMesh.Vertices[currentFace.A];
+                    var vertexB = cMesh.Vertices[currentFace.B];
+                    var vertexC = cMesh.Vertices[currentFace.C];
+                    var pixelA = this.canvasDraw.project(vertexA, transformMatrix);
+                    var pixelB = this.canvasDraw.project(vertexB, transformMatrix);
+                    var pixelC = this.canvasDraw.project(vertexC, transformMatrix);
+                    this.canvasDraw.drawBline(pixelA, pixelB);
+                    this.canvasDraw.drawBline(pixelB, pixelC);
+                    this.canvasDraw.drawBline(pixelC, pixelA);
+                }
+            };
+            Render.prototype.getWorldMatrix = function (cMesh) {
+                return BABYLON.Matrix.RotationYawPitchRoll(cMesh.Rotation.y, cMesh.Rotation.x, cMesh.Rotation.z)
+                    .multiply(BABYLON.Matrix.Translation(cMesh.Position.x, cMesh.Position.y, cMesh.Position.z));
+            };
+            Render.prototype.getTransformMatrix = function (worldMatrix, viewMatrix, projectionMatrix) {
+                return worldMatrix.multiply(viewMatrix).multiply(projectionMatrix);
+            };
+            Render.prototype.animation = function (meshes, index) {
+                meshes[index].Rotation.x += 0.01;
+                meshes[index].Rotation.y += 0.01;
+            };
+            return Render;
         }());
-        Render.renderToCanvas = renderToCanvas;
+        Render_1.Render = Render;
+    })(Render = engine3D.Render || (engine3D.Render = {}));
+})(engine3D || (engine3D = {}));
+var engine3D;
+(function (engine3D) {
+    var Render;
+    (function (Render) {
+        var RenderToCanvas = (function () {
+            function RenderToCanvas(canvasElement) {
+                var _this = this;
+                this.drawingLoop = function (timestamp) {
+                    _this.canvasDraw.clear();
+                    _this.render.doIt(_this.camera, _this.scene); // Doing the various matrix operations
+                    _this.canvasDraw.present(); // Flushing the back buffer into the front buffer
+                    requestAnimationFrame(_this.drawingLoop);
+                };
+                this.canvasDraw = new engine3D.Render.CanvasDraw(canvasElement);
+                this.render = new engine3D.Render.Render(this.canvasDraw);
+            }
+            RenderToCanvas.prototype.start = function (camera, scene) {
+                this.camera = camera;
+                this.scene = scene;
+                this.requestID = requestAnimationFrame(this.drawingLoop);
+            };
+            RenderToCanvas.prototype.pause = function () {
+                window.cancelAnimationFrame(this.requestID);
+            };
+            RenderToCanvas.prototype.setWorkingHeight = function (height) {
+                this.canvasDraw.setWorkingHeight(height);
+            };
+            RenderToCanvas.prototype.setWorkingWidth = function (width) {
+                this.canvasDraw.setWorkingWidth(width);
+            };
+            return RenderToCanvas;
+        }());
+        Render.RenderToCanvas = RenderToCanvas;
+    })(Render = engine3D.Render || (engine3D.Render = {}));
+})(engine3D || (engine3D = {}));
+var engine3D;
+(function (engine3D) {
+    var Render;
+    (function (Render) {
+        var AbstractPlatform = (function () {
+            function AbstractPlatform(canvasElement) {
+                this.render = new engine3D.Render.RenderToCanvas(canvasElement);
+            }
+            AbstractPlatform.prototype.start = function (scene, camera) {
+                this.render.start(camera, scene);
+            };
+            AbstractPlatform.prototype.stop = function () {
+                this.render.pause();
+            };
+            AbstractPlatform.prototype.changeScene = function (scene) {
+            };
+            AbstractPlatform.prototype.changeCamera = function (camera) {
+            };
+            AbstractPlatform.prototype.setWorkingHeight = function (height) {
+                this.render.setWorkingHeight(height);
+            };
+            AbstractPlatform.prototype.setWorkingWidth = function (width) {
+                this.render.setWorkingWidth(width);
+            };
+            return AbstractPlatform;
+        }());
+        Render.AbstractPlatform = AbstractPlatform;
+    })(Render = engine3D.Render || (engine3D.Render = {}));
+})(engine3D || (engine3D = {}));
+var engine3D;
+(function (engine3D) {
+    var Render;
+    (function (Render) {
+        var Canvas = (function (_super) {
+            __extends(Canvas, _super);
+            function Canvas() {
+                _super.apply(this, arguments);
+            }
+            return Canvas;
+        }(engine3D.Render.AbstractPlatform));
+        Render.Canvas = Canvas;
+    })(Render = engine3D.Render || (engine3D.Render = {}));
+})(engine3D || (engine3D = {}));
+var engine3D;
+(function (engine3D) {
+    var Render;
+    (function (Render) {
+        var WebGl = (function (_super) {
+            __extends(WebGl, _super);
+            function WebGl() {
+                _super.apply(this, arguments);
+            }
+            return WebGl;
+        }(engine3D.Render.AbstractPlatform));
+        Render.WebGl = WebGl;
     })(Render = engine3D.Render || (engine3D.Render = {}));
 })(engine3D || (engine3D = {}));
 var engine3D;
@@ -378,6 +364,60 @@ var engine3D;
             if (object)
                 this.add(object);
         }
+        Scene.prototype.add = function (object) {
+            var _this = this;
+            var rest = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                rest[_i - 1] = arguments[_i];
+            }
+            if (arguments.length > 1) {
+                Utils._CallCallbackForEachArgument(arguments, this.add);
+            }
+            else if (Utils._isMesh(object)) {
+                this.meshes.push(object);
+            }
+            else if (Utils._isArray(object)) {
+                object.forEach(function (item) {
+                    if (Utils._isMesh(item)) {
+                        _this.meshes.push(item);
+                    }
+                });
+            }
+            else {
+                console.warn("not accepted object: " + object);
+            }
+            return this;
+        };
+        Scene.prototype.remove = function (object) {
+            var _this = this;
+            var rest = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                rest[_i - 1] = arguments[_i];
+            }
+            if (arguments.length > 1) {
+                Utils._CallCallbackForEachArgument(arguments, this.remove);
+            }
+            else if (Utils._isMesh(object)) {
+                this._deleteMesh(object);
+            }
+            else if (Utils._isArray(object)) {
+                object.forEach(function (item) {
+                    if (Utils._isMesh(item)) {
+                        _this._deleteMesh(item);
+                    }
+                });
+            }
+            else {
+                console.warn("not accepted object: " + object);
+            }
+            return this;
+        };
+        Scene.prototype._deleteMesh = function (object) {
+            var index = this._meshes.indexOf(object);
+            if (index > -1) {
+                this._meshes.splice(index, 1);
+            }
+        };
         Object.defineProperty(Scene.prototype, "meshes", {
             get: function () {
                 return this._meshes;
@@ -388,142 +428,9 @@ var engine3D;
             enumerable: true,
             configurable: true
         });
-        Scene.prototype.add = function (object) {
-            var _this = this;
-            var rest = [];
-            for (var _i = 1; _i < arguments.length; _i++) {
-                rest[_i - 1] = arguments[_i];
-            }
-            if (arguments.length > 1) {
-                this._CallCallbackForEachArgument(arguments, this.add);
-            }
-            else if (this._isMesh(object)) {
-                this.meshes.push(object);
-            }
-            else if (this._isArray(object)) {
-                object.forEach(function (item) {
-                    if (_this._isMesh(item)) {
-                        _this.meshes.push(item);
-                    }
-                });
-            }
-            else {
-                console.warn("not accepted object: " + object);
-            }
-            return this;
-        };
-        Scene.prototype.showConsoleMesh = function () {
-            console.log(this._meshes);
-        };
-        Scene.prototype._deleteMesh = function (object) {
-            var index = this._meshes.indexOf(object);
-            if (index > -1) {
-                this._meshes.splice(index, 1);
-            }
-        };
-        Scene.prototype.remove = function (object) {
-            var _this = this;
-            var rest = [];
-            for (var _i = 1; _i < arguments.length; _i++) {
-                rest[_i - 1] = arguments[_i];
-            }
-            if (arguments.length > 1) {
-                this._CallCallbackForEachArgument(arguments, this.remove);
-            }
-            else if (this._isMesh(object)) {
-                this._deleteMesh(object);
-            }
-            else if (this._isArray(object)) {
-                object.forEach(function (item) {
-                    if (_this._isMesh(item)) {
-                        _this._deleteMesh(item);
-                    }
-                });
-            }
-            else {
-                console.warn("not accepted object: " + object);
-            }
-            return this;
-        };
-        Scene.prototype._isMesh = function (object) {
-            return object instanceof mesh3D.Mesh;
-        };
-        Scene.prototype._isArray = function (object) {
-            return object instanceof Array;
-        };
-        Scene.prototype._CallCallbackForEachArgument = function (arg, callback) {
-            for (var i = 0; i < arg.length; i++) {
-                callback.call(this, arg[i]);
-            }
-            return arg.length > 1;
-        };
         return Scene;
     }());
     engine3D.Scene = Scene;
-})(engine3D || (engine3D = {}));
-var engine3D;
-(function (engine3D) {
-    var Camera;
-    (function (Camera) {
-        var AbstractCamera = (function () {
-            function AbstractCamera() {
-            }
-            Object.defineProperty(AbstractCamera.prototype, "Position", {
-                get: function () {
-                    return this._Position;
-                },
-                set: function (value) {
-                    this._Position = value;
-                },
-                enumerable: true,
-                configurable: true
-            });
-            Object.defineProperty(AbstractCamera.prototype, "Target", {
-                get: function () {
-                    return this._Target;
-                },
-                set: function (value) {
-                    this._Target = value;
-                },
-                enumerable: true,
-                configurable: true
-            });
-            return AbstractCamera;
-        }());
-        Camera.AbstractCamera = AbstractCamera;
-    })(Camera = engine3D.Camera || (engine3D.Camera = {}));
-})(engine3D || (engine3D = {}));
-var engine3D;
-(function (engine3D) {
-    var Camera;
-    (function (Camera) {
-        var Orthographic = (function (_super) {
-            __extends(Orthographic, _super);
-            function Orthographic(fov, aspect, near, far) {
-                _super.call(this);
-                this._Position = BABYLON.Vector3.Zero();
-                this._Target = BABYLON.Vector3.Zero();
-            }
-            return Orthographic;
-        }(engine3D.Camera.AbstractCamera));
-        Camera.Orthographic = Orthographic;
-    })(Camera = engine3D.Camera || (engine3D.Camera = {}));
-})(engine3D || (engine3D = {}));
-var engine3D;
-(function (engine3D) {
-    var Camera;
-    (function (Camera) {
-        var Prospective = (function (_super) {
-            __extends(Prospective, _super);
-            function Prospective(fov, aspect, near, far) {
-                _super.call(this);
-                this._Position = new BABYLON.Vector3(0, 0, 10);
-                this._Target = new BABYLON.Vector3(0, 0, 0);
-            }
-            return Prospective;
-        }(engine3D.Camera.AbstractCamera));
-        Camera.Prospective = Prospective;
-    })(Camera = engine3D.Camera || (engine3D.Camera = {}));
 })(engine3D || (engine3D = {}));
 var BABYLON;
 (function (BABYLON) {
@@ -988,3 +895,280 @@ var BABYLON;
     }());
     BABYLON.Matrix = Matrix;
 })(BABYLON || (BABYLON = {}));
+// <reference path="./lib/babylon.math.ts"/>
+var mesh3D;
+(function (mesh3D) {
+    var Mesh = (function () {
+        function Mesh(name, verticesCount, facesCount) {
+            this.name = name;
+            this.Vertices = new Array(verticesCount);
+            this.Faces = new Array(facesCount);
+            this.Rotation = BABYLON.Vector3.Zero();
+            this.Position = BABYLON.Vector3.Zero();
+        }
+        return Mesh;
+    }());
+    mesh3D.Mesh = Mesh;
+})(mesh3D || (mesh3D = {}));
+var mesh3D;
+(function (mesh3D) {
+    function CreateMeshesFromJSON(jsonObject) {
+        var meshes = [];
+        for (var meshIndex = 0; meshIndex < jsonObject.meshes.length; meshIndex++) {
+            var mesh = createMesh(jsonObject.meshes[meshIndex]);
+            mesh.Position = getBlenderPosition(jsonObject, meshIndex);
+            meshes.push(mesh);
+        }
+        return meshes;
+    }
+    mesh3D.CreateMeshesFromJSON = CreateMeshesFromJSON;
+    function createMesh(meshJson) {
+        var verticesArray = meshJson.vertices;
+        var indicesArray = meshJson.indices;
+        var verticesStep = getverticesStepIndex(meshJson);
+        var verticesCount = verticesArray.length / verticesStep;
+        var facesCount = indicesArray.length / 3;
+        var mesh = new mesh3D.Mesh(meshJson.name, verticesCount, facesCount);
+        fillingFaces(mesh, indicesArray);
+        fillingVertices(mesh, verticesArray, verticesStep);
+        return mesh;
+    }
+    function getBlenderPosition(jsonObject, meshIndex) {
+        var position = jsonObject.meshes[meshIndex].position;
+        return new BABYLON.Vector3(position[0], position[1], position[2]);
+    }
+    // Depending of the number of texture's coordinates per vertex
+    // we're jumping in the vertices array  by 6, 8 & 10 windows frame
+    function getverticesStepIndex(meshJson) {
+        switch (meshJson.uvCount) {
+            case 0:
+                return 6;
+            case 1:
+                return 8;
+            case 2:
+                return 10;
+            default:
+                return 1;
+        }
+    }
+    function fillingFaces(mesh, indicesArray) {
+        // number of faces is logically the size of the array divided by 3 (A, B, C)
+        for (var index = 0, facesCount = indicesArray.length / 3; index < facesCount; index++) {
+            var a = indicesArray[index * 3];
+            var b = indicesArray[index * 3 + 1];
+            var c = indicesArray[index * 3 + 2];
+            mesh.Faces[index] = {
+                A: a,
+                B: b,
+                C: c
+            };
+        }
+    }
+    function fillingVertices(mesh, verticesArray, verticesStep) {
+        for (var index = 0, verticesCount = verticesArray.length / verticesStep; index < verticesCount; index++) {
+            var x = verticesArray[index * verticesStep];
+            var y = verticesArray[index * verticesStep + 1];
+            var z = verticesArray[index * verticesStep + 2];
+            mesh.Vertices[index] = new BABYLON.Vector3(x, y, z);
+        }
+    }
+})(mesh3D || (mesh3D = {}));
+var mesh3D;
+(function (mesh3D) {
+    var Utils;
+    (function (Utils) {
+        function LoadJSONFileAsync(fileName, callback) {
+            var xmlhttp = new XMLHttpRequest();
+            xmlhttp.open("GET", fileName, true);
+            xmlhttp.onreadystatechange = function () {
+                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                    var jsonObject = JSON.parse(xmlhttp.responseText);
+                    callback(mesh3D.CreateMeshesFromJSON(jsonObject));
+                }
+            };
+            xmlhttp.send(null);
+        }
+        Utils.LoadJSONFileAsync = LoadJSONFileAsync;
+    })(Utils = mesh3D.Utils || (mesh3D.Utils = {}));
+})(mesh3D || (mesh3D = {}));
+var Utils;
+(function (Utils) {
+    function _isMesh(object) {
+        return object instanceof mesh3D.Mesh;
+    }
+    Utils._isMesh = _isMesh;
+    function _isArray(object) {
+        return object instanceof Array;
+    }
+    Utils._isArray = _isArray;
+    function _CallCallbackForEachArgument(arg, callback) {
+        for (var i = 0; i < arg.length; i++) {
+            callback.call(this, arg[i]);
+        }
+        return arg.length > 1;
+    }
+    Utils._CallCallbackForEachArgument = _CallCallbackForEachArgument;
+})(Utils || (Utils = {}));
+/*
+ * Copyright 2010, Google Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *     * Neither the name of Google Inc. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+/**
+ * @fileoverview This file contains functions every webgl program will need
+ * a version of one way or another.
+ *
+ * Instead of setting up a context manually it is recommended to
+ * use. This will check for success or failure. On failure it
+ * will attempt to present an approriate message to the user.
+ *
+ *       gl = WebGLUtils.setupWebGL(canvas);
+ *
+ * For animated WebGL apps use of setTimeout or setInterval are
+ * discouraged. It is recommended you structure your rendering
+ * loop like this.
+ *
+ *       function render() {
+ *         window.requestAnimFrame(render, canvas);
+ *
+ *         // do rendering
+ *         ...
+ *       }
+ *       render();
+ *
+ * This will call your rendering function up to the refresh rate
+ * of your display but will stop rendering if your app is not
+ * visible.
+ */
+WebGLUtils = function () {
+    /**
+     * Creates the HTLM for a failure message
+     * @param {string} canvasContainerId id of container of th
+     *        canvas.
+     * @return {string} The html.
+     */
+    var makeFailHTML = function (msg) {
+        return '' +
+            '<table style="background-color: #8CE; width: 100%; height: 100%;"><tr>' +
+            '<td align="center">' +
+            '<div style="display: table-cell; vertical-align: middle;">' +
+            '<div style="">' + msg + '</div>' +
+            '</div>' +
+            '</td></tr></table>';
+    };
+    /**
+     * Mesasge for getting a webgl browser
+     * @type {string}
+     */
+    var GET_A_WEBGL_BROWSER = '' +
+        'This page requires a browser that supports WebGL.<br/>' +
+        '<a href="http://get.webgl.org">Click here to upgrade your browser.</a>';
+    /**
+     * Mesasge for need better hardware
+     * @type {string}
+     */
+    var OTHER_PROBLEM = '' +
+        "It doesn't appear your computer can support WebGL.<br/>" +
+        '<a href="http://get.webgl.org/troubleshooting/">Click here for more information.</a>';
+    /**
+     * Creates a webgl context. If creation fails it will
+     * change the contents of the container of the <canvas>
+     * tag to an error message with the correct links for WebGL.
+     * @param {Element} canvas. The canvas element to create a
+     *     context from.
+     * @param {WebGLContextCreationAttirbutes} opt_attribs Any
+     *     creation attributes you want to pass in.
+     * @return {WebGLRenderingContext} The created context.
+     */
+    var setupWebGL = function (canvas, opt_attribs) {
+        function showLink(str) {
+            var container = canvas.parentNode;
+            if (container) {
+                container.innerHTML = makeFailHTML(str);
+            }
+        }
+        ;
+        if (!window.WebGLRenderingContext) {
+            showLink(GET_A_WEBGL_BROWSER);
+            return null;
+        }
+        var context = create3DContext(canvas, opt_attribs);
+        if (!context) {
+            showLink(OTHER_PROBLEM);
+        }
+        return context;
+    };
+    /**
+     * Creates a webgl context.
+     * @param {!Canvas} canvas The canvas tag to get context
+     *     from. If one is not passed in one will be created.
+     * @return {!WebGLContext} The created context.
+     */
+    var create3DContext = function (canvas, opt_attribs) {
+        var names = ["webgl", "experimental-webgl", "webkit-3d", "moz-webgl"];
+        var context = null;
+        for (var ii = 0; ii < names.length; ++ii) {
+            try {
+                context = canvas.getContext(names[ii], opt_attribs);
+            }
+            catch (e) { }
+            if (context) {
+                break;
+            }
+        }
+        return context;
+    };
+    return {
+        create3DContext: create3DContext,
+        setupWebGL: setupWebGL
+    };
+}();
+/**
+ * Provides requestAnimationFrame in a cross browser way.
+ */
+window.requestAnimFrame = (function () {
+    return window.requestAnimationFrame ||
+        window.webkitRequestAnimationFrame ||
+        window.mozRequestAnimationFrame ||
+        window.oRequestAnimationFrame ||
+        window.msRequestAnimationFrame ||
+        function (/* function FrameRequestCallback */ callback, /* DOMElement Element */ element) {
+            return window.setTimeout(callback, 1000 / 60);
+        };
+})();
+/**
+ * Provides cancelAnimationFrame in a cross browser way.
+ */
+window.cancelAnimFrame = (function () {
+    return window.cancelAnimationFrame ||
+        window.webkitCancelAnimationFrame ||
+        window.mozCancelAnimationFrame ||
+        window.oCancelAnimationFrame ||
+        window.msCancelAnimationFrame ||
+        window.clearTimeout;
+})();

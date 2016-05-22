@@ -3,10 +3,11 @@
     "target": "es5",
     "outFile": "./build/build.js",
     "removeComments": false,
-    "declaration": true,
     "diagnostics": true,
     "pretty": true,
-    "watch": true
+    "watch": true,
+    "allowJs": true,
+    "rootDir": "./src"
   },
   "exclude": [
     "build"
