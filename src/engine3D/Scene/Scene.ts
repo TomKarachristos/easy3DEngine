@@ -49,7 +49,6 @@ namespace engine3D{
     set meshes(value: mesh3D.Mesh[]) {
       this._meshes = value;
     }
-    
    
   }
 }

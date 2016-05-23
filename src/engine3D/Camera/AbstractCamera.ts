@@ -3,7 +3,9 @@ namespace engine3D{
     export abstract class AbstractCamera{
       protected _Position: BABYLON.Vector3;
       protected _Target: BABYLON.Vector3;
-
+      
+      public abstract getProjectionMaxtrix():BABYLON.Matrix;
+      
       get Position(): BABYLON.Vector3 {
         return this._Position;
       }

@@ -16,6 +16,7 @@ namespace mesh3D{
       this.Faces = new Array(facesCount);
       this.Rotation = BABYLON.Vector3.Zero();
       this.Position = BABYLON.Vector3.Zero();
+    
     }
   }
 }

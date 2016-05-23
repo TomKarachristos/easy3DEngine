@@ -1,34 +1,37 @@
 namespace engine3D{
   export namespace Render{
     export abstract class AbstractPlatform{
-      protected render: engine3D.Render.RenderToCanvas;
-      public camera: engine3D.Camera.AbstractCamera;
-      public scene: engine3D.Scene;
-       
+      private _drawingLoop: engine3D.Render.drawingLoop;
+      private _workingCanvas: engine3D.Render.workingCanvas;
+      
       constructor(canvasElement:HTMLCanvasElement) {
-        this.render = new engine3D.Render.RenderToCanvas(canvasElement);
+        this._workingCanvas = new engine3D.Render.workingCanvas(canvasElement);
+        this._drawingLoop = new engine3D.Render.drawingLoop(this._workingCanvas);
       }
       
       public start(scene: engine3D.Scene, camera: engine3D.Camera.AbstractCamera): void{
-        this.render.start(camera,scene);
+        this._drawingLoop.start(camera,scene);
       }
       
       public stop(): void{
-        this.render.pause();
+        this._drawingLoop.pause();
       }
       
       public changeScene(scene: engine3D.Scene): void{
+        // TODO
       }
       public changeCamera(camera: engine3D.Camera.AbstractCamera): void{
+        // TODO
       }
       
       public setWorkingHeight(height:number):void{
-        this.render.setWorkingHeight(height);
+        this._workingCanvas.setWorkingHeight(height);
       }
       public setWorkingWidth(width:number):void{
-        this.render.setWorkingWidth(width);
+        this._workingCanvas.setWorkingWidth(width);
       }
       
     }
+    
   }
 }
