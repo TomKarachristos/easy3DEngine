@@ -35,7 +35,11 @@
         }
 
         public static Clamp(value: number, min = 0, max = 1): number {
-            return Math.min(max, Math.max(min, value));
+            return Math.max(min, Math.min(value, max));
+        }
+        
+        public static interpolate(min: number, max: number, gradient: number) {
+            return min + (max - min) * MathTools.Clamp(gradient);
         }
     }
 

@@ -1,22 +1,25 @@
 namespace engine3D{
   export namespace Camera{
     export class Prospective extends engine3D.Camera.AbstractCamera{
-      public fov:number;
-      public aspect:number;
-      public near:number;
-      public far:number;
+      private _fov:number;
+      private _aspect:number;
+      private _near:number;
+      private _far:number;
+      
       constructor(fov:number,aspect:number,near:number,far:number) {
         super();
-        this.fov = fov;
-        this.aspect = aspect;
-        this.near = near;
-        this.far = far;
+        this._fov = fov;
+        this._aspect = aspect;
+        this._near = near;
+        this._far = far;
         this._Position = new BABYLON.Vector3(0, 0, 10);
         this._Target = new BABYLON.Vector3(0, 0, 0);
+        this._calculateViewMatrix();
+        this._calculateProjectionMaxtrix();
       }
       
-      public getProjectionMaxtrix():BABYLON.Matrix{
-         return BABYLON.Matrix.PerspectiveFovLH(this.fov,this.aspect,this.near,this.far);
+      public _calculateProjectionMaxtrix():void{
+         this._ProjectionMaxtrix = BABYLON.Matrix.PerspectiveFovLH(this._fov, this._aspect, this._near, this._far);
       }
     
     }

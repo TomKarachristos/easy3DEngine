@@ -14,12 +14,14 @@ namespace engine3D{
         this._height = height;
         this._znear = znear;
         this._zfar = zfar;
+        this._calculateViewMatrix();
+        this._calculateProjectionMaxtrix();
       }
       
-      
-      public getProjectionMaxtrix():BABYLON.Matrix{
-        return  BABYLON.Matrix.OrthoLH(this._width, this._height, this._znear, this._zfar);
+      public _calculateProjectionMaxtrix():void{
+        this._ProjectionMaxtrix = BABYLON.Matrix.OrthoLH(this._width, this._height, this._znear, this._zfar);
       }
+      
     }
   }
 }
