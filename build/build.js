@@ -204,22 +204,16 @@ var engine3D;
             projectCanvas.prototype.facesTo2D = function (mesh, transformMatrix) {
                 for (var indexFaces = 0; indexFaces < mesh.Faces.length; indexFaces++) {
                     var currentFace = mesh.Faces[indexFaces];
-                    var vertexA = mesh.Vertices[currentFace.A];
-                    var vertexB = mesh.Vertices[currentFace.B];
-                    var vertexC = mesh.Vertices[currentFace.C];
-                    var pixelA = this.corrdinate3DTo2D(vertexA, transformMatrix);
-                    var pixelB = this.corrdinate3DTo2D(vertexB, transformMatrix);
-                    var pixelC = this.corrdinate3DTo2D(vertexC, transformMatrix);
+                    var pixelA = this.corrdinate3DTo2D(mesh.Vertices[currentFace.A], transformMatrix);
+                    var pixelB = this.corrdinate3DTo2D(mesh.Vertices[currentFace.B], transformMatrix);
+                    var pixelC = this.corrdinate3DTo2D(mesh.Vertices[currentFace.C], transformMatrix);
                     var color = 0.25 + ((indexFaces % mesh.Faces.length) / mesh.Faces.length) * 0.75 * 255;
                     this.drawTriangle(pixelA, pixelB, pixelC, new BABYLON.Color4(255, color, color, color));
                 }
             };
             projectCanvas.prototype.corrdinate3DTo2D = function (coordinate, transformMatrix) {
-                // transforming the coordinates
                 var point = BABYLON.Vector3.TransformCoordinates(coordinate, transformMatrix);
-                // The transformed coordinates will be based on coordinate system
-                // starting on the center of the screen. But drawing on screen normally starts
-                // from top left. We then need to transform them again to have x:0, y:0 on top left.
+                //  We then need transform them to have x:0, y:0 on top left.
                 var x = point.x * this._workingCanvas.getWorkingWidth() + this._workingCanvas.getWorkingWidth() / 2.0;
                 var y = -point.y * this._workingCanvas.getWorkingHeight() + this._workingCanvas.getWorkingHeight() / 2.0;
                 return (new BABYLON.Vector3(x, y, point.z));
@@ -233,6 +227,50 @@ var engine3D;
             projectCanvas.prototype.isInBound = function (point) {
                 return point.x >= 0 && point.y >= 0 && point.x < this._workingCanvas.getWorkingWidth()
                     && point.y < this._workingCanvas.getWorkingHeight();
+            };
+            projectCanvas.prototype.drawTriangle = function (p1, p2, p3, color) {
+                // Sorting the points in order to always have this order on screen p1, p2 & p3
+                // with p1 always up (thus having the Y the lowest possible to be near the top screen)
+                // then p2 between p1 & p3
+                if (p1.y > p2.y) {
+                    _a = [p2, p1], p1 = _a[0], p2 = _a[1];
+                }
+                if (p2.y > p3.y) {
+                    _b = [p3, p2], p2 = _b[0], p3 = _b[1];
+                }
+                if (p1.y > p2.y) {
+                    _c = [p2, p1], p1 = _c[0], p2 = _c[1];
+                }
+                var slopeP1P2 = (p2.y - p1.y > 0) ? (p2.x - p1.x) / (p2.y - p1.y) : 0;
+                var slopeP1P3 = (p3.y - p1.y > 0) ? (p3.x - p1.x) / (p3.y - p1.y) : 0;
+                // P3
+                if (slopeP1P2 > slopeP1P3) {
+                    this._sketchRightDirectionTringle(p1, p2, p3, color);
+                }
+                else {
+                    this._sketchLeftDirectionTringle(p1, p2, p3, color);
+                }
+                var _a, _b, _c;
+            };
+            projectCanvas.prototype._sketchRightDirectionTringle = function (p1, p2, p3, color) {
+                for (var y = p1.y >> 0; y <= p3.y >> 0; y++) {
+                    if (y < p2.y) {
+                        this.processScanLine(y, p1, p3, p1, p2, color);
+                    }
+                    else {
+                        this.processScanLine(y, p1, p3, p2, p3, color);
+                    }
+                }
+            };
+            projectCanvas.prototype._sketchLeftDirectionTringle = function (p1, p2, p3, color) {
+                for (var y = p1.y >> 0; y <= p3.y >> 0; y++) {
+                    if (y < p2.y) {
+                        this.processScanLine(y, p1, p2, p1, p3, color);
+                    }
+                    else {
+                        this.processScanLine(y, p2, p3, p1, p3, color);
+                    }
+                }
             };
             // drawing line between 2 points from left to right
             // papb -> pcpd
@@ -254,70 +292,6 @@ var engine3D;
                     var gradient = (x - sx) / (ex - sx);
                     var z = BABYLON.MathTools.interpolate(z1, z2, gradient);
                     this.drawPoint(new BABYLON.Vector3(x, y, z), color);
-                }
-            };
-            projectCanvas.prototype.drawTriangle = function (p1, p2, p3, color) {
-                // Sorting the points in order to always have this order on screen p1, p2 & p3
-                // with p1 always up (thus having the Y the lowest possible to be near the top screen)
-                // then p2 between p1 & p3
-                if (p1.y > p2.y) {
-                    var temp = p2;
-                    p2 = p1;
-                    p1 = temp;
-                }
-                if (p2.y > p3.y) {
-                    var temp = p2;
-                    p2 = p3;
-                    p3 = temp;
-                }
-                if (p1.y > p2.y) {
-                    var temp = p2;
-                    p2 = p1;
-                    p1 = temp;
-                }
-                // inverse slopes
-                var dP1P2;
-                var dP1P3;
-                // http://en.wikipedia.org/wiki/Slope
-                // Computing slopes
-                if (p2.y - p1.y > 0)
-                    dP1P2 = (p2.x - p1.x) / (p2.y - p1.y);
-                else
-                    dP1P2 = 0;
-                if (p3.y - p1.y > 0)
-                    dP1P3 = (p3.x - p1.x) / (p3.y - p1.y);
-                else
-                    dP1P3 = 0;
-                // First case where triangles are like that:
-                // P1
-                // -
-                // -- 
-                // - -
-                // -  -
-                // -   - P2
-                // -  -
-                // - -
-                // -
-                // P3
-                if (dP1P2 > dP1P3) {
-                    for (var y = p1.y >> 0; y <= p3.y >> 0; y++) {
-                        if (y < p2.y) {
-                            this.processScanLine(y, p1, p3, p1, p2, color);
-                        }
-                        else {
-                            this.processScanLine(y, p1, p3, p2, p3, color);
-                        }
-                    }
-                }
-                else {
-                    for (var y = p1.y >> 0; y <= p3.y >> 0; y++) {
-                        if (y < p2.y) {
-                            this.processScanLine(y, p1, p2, p1, p3, color);
-                        }
-                        else {
-                            this.processScanLine(y, p2, p3, p1, p3, color);
-                        }
-                    }
                 }
             };
             return projectCanvas;

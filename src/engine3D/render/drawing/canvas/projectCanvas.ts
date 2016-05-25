@@ -10,13 +10,10 @@ namespace engine3D {
       public facesTo2D(mesh, transformMatrix) {
         for (var indexFaces = 0; indexFaces < mesh.Faces.length; indexFaces++) {
           var currentFace = mesh.Faces[indexFaces];
-          var vertexA = mesh.Vertices[currentFace.A];
-          var vertexB = mesh.Vertices[currentFace.B];
-          var vertexC = mesh.Vertices[currentFace.C];
 
-          var pixelA = this.corrdinate3DTo2D(vertexA, transformMatrix);
-          var pixelB = this.corrdinate3DTo2D(vertexB, transformMatrix);
-          var pixelC = this.corrdinate3DTo2D(vertexC, transformMatrix);
+          var pixelA = this.corrdinate3DTo2D(mesh.Vertices[currentFace.A], transformMatrix);
+          var pixelB = this.corrdinate3DTo2D(mesh.Vertices[currentFace.B], transformMatrix);
+          var pixelC = this.corrdinate3DTo2D(mesh.Vertices[currentFace.C], transformMatrix);
 
           var color: number = 0.25 + ((indexFaces % mesh.Faces.length) / mesh.Faces.length) * 0.75 *255;
           this.drawTriangle(pixelA, pixelB, pixelC, new BABYLON.Color4(255, color, color, color));
@@ -24,11 +21,8 @@ namespace engine3D {
       }
       
       public corrdinate3DTo2D(coordinate: BABYLON.Vector3, transformMatrix: BABYLON.Matrix) {
-        // transforming the coordinates
         var point = BABYLON.Vector3.TransformCoordinates(coordinate, transformMatrix);
-        // The transformed coordinates will be based on coordinate system
-        // starting on the center of the screen. But drawing on screen normally starts
-        // from top left. We then need to transform them again to have x:0, y:0 on top left.
+        //  We then need transform them to have x:0, y:0 on top left.
         var x = point.x * this._workingCanvas.getWorkingWidth() + this._workingCanvas.getWorkingWidth() / 2.0;
         var y = -point.y * this._workingCanvas.getWorkingHeight() + this._workingCanvas.getWorkingHeight() / 2.0;
         return (new BABYLON.Vector3(x, y, point.z));
@@ -46,6 +40,57 @@ namespace engine3D {
           && point.y < this._workingCanvas.getWorkingHeight()
       }
       
+      public drawTriangle(p1: BABYLON.Vector3, p2: BABYLON.Vector3, 
+                    p3: BABYLON.Vector3, color: BABYLON.Color4): void {
+          // Sorting the points in order to always have this order on screen p1, p2 & p3
+          // with p1 always up (thus having the Y the lowest possible to be near the top screen)
+          // then p2 between p1 & p3
+          if (p1.y > p2.y) {
+            [p1, p2] = [p2, p1];
+          }
+
+          if (p2.y > p3.y) {
+            [p2, p3] = [p3, p2];
+          }
+
+          if (p1.y > p2.y) {
+            [p1, p2] = [p2, p1];
+          }
+
+          let slopeP1P2:number = (p2.y - p1.y > 0) ? (p2.x - p1.x) / (p2.y - p1.y) : 0;
+          let slopeP1P3:number = (p3.y - p1.y > 0) ? (p3.x - p1.x) / (p3.y - p1.y) : 0;
+          // P3
+          if (slopeP1P2 > slopeP1P3) {
+            this._sketchRightDirectionTringle(p1, p2, p3, color);
+          }else {
+            this._sketchLeftDirectionTringle(p1, p2, p3, color);
+          }
+      }
+
+      private _sketchRightDirectionTringle(p1: BABYLON.Vector3, p2: BABYLON.Vector3,
+      p3: BABYLON.Vector3, color: BABYLON.Color4):void {
+        for (let y = p1.y >> 0; y <= p3.y >> 0; y++) {
+          if (y < p2.y) {
+            this.processScanLine(y, p1, p3, p1, p2, color);
+          }
+          else {
+            this.processScanLine(y, p1, p3, p2, p3, color);
+          }
+        }
+      }
+
+      private _sketchLeftDirectionTringle(p1: BABYLON.Vector3, p2: BABYLON.Vector3,
+      p3: BABYLON.Vector3, color: BABYLON.Color4):void {
+        for (let y = p1.y >> 0; y <= p3.y >> 0; y++) {
+          if (y < p2.y) {
+            this.processScanLine(y, p1, p2, p1, p3, color);
+          }
+          else {
+            this.processScanLine(y, p2, p3, p1, p3, color);
+          }
+        }
+      }
+
       // drawing line between 2 points from left to right
       // papb -> pcpd
       // pa, pb, pc, pd must then be sorted before
@@ -74,89 +119,7 @@ namespace engine3D {
             this.drawPoint(new BABYLON.Vector3(x, y, z), color);
           }
       }
-      
-      public drawTriangle(p1: BABYLON.Vector3, p2: BABYLON.Vector3, 
-                    p3: BABYLON.Vector3, color: BABYLON.Color4): void {
-          // Sorting the points in order to always have this order on screen p1, p2 & p3
-          // with p1 always up (thus having the Y the lowest possible to be near the top screen)
-          // then p2 between p1 & p3
-          if (p1.y > p2.y) {
-            var temp = p2;
-            p2 = p1;
-            p1 = temp;
-          }
 
-          if (p2.y > p3.y) {
-            var temp = p2;
-            p2 = p3;
-            p3 = temp;
-          }
-
-          if (p1.y > p2.y) {
-            var temp = p2;
-            p2 = p1;
-            p1 = temp;
-          }
-
-          // inverse slopes
-          var dP1P2: number; var dP1P3: number;
-
-          // http://en.wikipedia.org/wiki/Slope
-          // Computing slopes
-          if (p2.y - p1.y > 0)
-            dP1P2 = (p2.x - p1.x) / (p2.y - p1.y);
-          else
-            dP1P2 = 0;
-
-          if (p3.y - p1.y > 0)
-            dP1P3 = (p3.x - p1.x) / (p3.y - p1.y);
-          else
-            dP1P3 = 0;
-
-          // First case where triangles are like that:
-          // P1
-          // -
-          // -- 
-          // - -
-          // -  -
-          // -   - P2
-          // -  -
-          // - -
-          // -
-          // P3
-          if (dP1P2 > dP1P3) {
-            for (var y = p1.y >> 0; y <= p3.y >> 0; y++)
-            {
-              if (y < p2.y) {
-                this.processScanLine(y, p1, p3, p1, p2, color);
-              }
-              else {
-                this.processScanLine(y, p1, p3, p2, p3, color);
-              }
-            }
-          }
-          // First case where triangles are like that:
-          //       P1
-          //        -
-          //       -- 
-          //      - -
-          //     -  -
-          // P2 -   - 
-          //     -  -
-          //      - -
-          //        -
-          //       P3
-          else {
-            for (var y = p1.y >> 0; y <= p3.y >> 0; y++){
-              if (y < p2.y) {
-                this.processScanLine(y, p1, p2, p1, p3, color);
-              }
-              else {
-                this.processScanLine(y, p2, p3, p1, p3, color);
-              }
-            }
-          }
-      }
     }
   }
 }
