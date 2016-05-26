@@ -13,12 +13,13 @@ namespace engine3D{
         this._drawingLoop.start(camera,scene);
       }
       
-      public stop(): void{
+      public pause(): void{
         this._drawingLoop.pause();
       }
       
       public changeScene(scene: engine3D.Scene): void{
         // TODO
+        this._drawingLoop.start(null,scene);
       }
       public changeCamera(camera: engine3D.Camera.AbstractCamera): void{
         // TODO

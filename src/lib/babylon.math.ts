@@ -38,9 +38,13 @@
             return Math.max(min, Math.min(value, max));
         }
         
-        public static interpolate(min: number, max: number, gradient: number) {
+        public static Interpolate(min: number, max: number, gradient: number) {
             return min + (max - min) * MathTools.Clamp(gradient);
         }
+        public static Gradient(currentPoint:number,startPoint:number,endPoint:number){
+            return startPoint != endPoint ? (currentPoint - startPoint) / (endPoint - startPoint) : 1;
+        }
+      
     }
 
 

@@ -8,9 +8,15 @@ namespace engine3D{
       }
       
       // BUG: SOMETHING WITH WIDTH AND HEIGHT change
-      public abstract clear(): void;
-      public abstract render(camera: engine3D.Camera.AbstractCamera, scene: engine3D.Scene): void;
-      public abstract draw(): void;
+      protected abstract _clear(): void;
+      protected abstract _render(camera: engine3D.Camera.AbstractCamera, scene: engine3D.Scene): void;
+      protected abstract _draw(): void;
+      
+      public renderingPipeline(camera: engine3D.Camera.AbstractCamera, scene: engine3D.Scene):void{
+        this._clear();
+        this._render(camera, scene); // Doing the various matrix operations
+        this._draw();
+      }
       
       public setWorkingWidth(width:number){
         this._workingCanvas.width = width;

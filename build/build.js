@@ -119,38 +119,15 @@ var engine3D;
 (function (engine3D) {
     var Render;
     (function (Render) {
-        var drawingLoop = (function () {
-            function drawingLoop(workingCanvas) {
-                var _this = this;
-                this.drawingLoop = function (timestamp) {
-                    _this._workingCanvas.clear();
-                    _this._workingCanvas.render(_this._camera, _this._scene); // Doing the various matrix operations
-                    _this._workingCanvas.draw();
-                    requestAnimationFrame(_this.drawingLoop);
-                };
-                this._workingCanvas = workingCanvas;
-            }
-            drawingLoop.prototype.start = function (camera, scene) {
-                this._camera = camera;
-                this._scene = scene;
-                this._requestID = requestAnimationFrame(this.drawingLoop);
-            };
-            drawingLoop.prototype.pause = function () {
-                window.cancelAnimationFrame(this._requestID);
-            };
-            return drawingLoop;
-        }());
-        Render.drawingLoop = drawingLoop;
-    })(Render = engine3D.Render || (engine3D.Render = {}));
-})(engine3D || (engine3D = {}));
-var engine3D;
-(function (engine3D) {
-    var Render;
-    (function (Render) {
         var AbstractRender = (function () {
             function AbstractRender(canvasElement) {
                 this._workingCanvas = canvasElement;
             }
+            AbstractRender.prototype.renderingPipeline = function (camera, scene) {
+                this._clear();
+                this._render(camera, scene); // Doing the various matrix operations
+                this._draw();
+            };
             AbstractRender.prototype.setWorkingWidth = function (width) {
                 this._workingCanvas.width = width;
             };
@@ -166,6 +143,57 @@ var engine3D;
             return AbstractRender;
         }());
         Render.AbstractRender = AbstractRender;
+    })(Render = engine3D.Render || (engine3D.Render = {}));
+})(engine3D || (engine3D = {}));
+var engine3D;
+(function (engine3D) {
+    var Render;
+    (function (Render) {
+        var drawingLoop = (function () {
+            function drawingLoop(workingCanvas) {
+                var _this = this;
+                this._drawingLoop = function (timestamp) {
+                    _this._workingCanvas.renderingPipeline(_this._camera, _this._scene);
+                    requestAnimationFrame(_this._drawingLoop);
+                };
+                this._workingCanvas = workingCanvas;
+            }
+            drawingLoop.prototype.start = function (camera, scene) {
+                this._camera = camera;
+                this._scene = scene;
+                this._requestID = requestAnimationFrame(this._drawingLoop);
+            };
+            drawingLoop.prototype.pause = function () {
+                window.cancelAnimationFrame(this._requestID);
+            };
+            return drawingLoop;
+        }());
+        Render.drawingLoop = drawingLoop;
+    })(Render = engine3D.Render || (engine3D.Render = {}));
+})(engine3D || (engine3D = {}));
+var engine3D;
+(function (engine3D) {
+    var Render;
+    (function (Render) {
+        var workingCanvas = (function (_super) {
+            __extends(workingCanvas, _super);
+            function workingCanvas(canvasElement) {
+                _super.call(this, canvasElement);
+                this._drawCanvas = new Render.DrawCanvas(canvasElement);
+                this._renderCanvas = new Render.RenderCanvas(canvasElement, this._drawCanvas);
+            }
+            workingCanvas.prototype._clear = function () {
+                this._drawCanvas.clear();
+            };
+            workingCanvas.prototype._draw = function () {
+                this._drawCanvas.draw();
+            };
+            workingCanvas.prototype._render = function (camera, scene) {
+                this._renderCanvas.render(camera, scene);
+            };
+            return workingCanvas;
+        }(Render.AbstractRender));
+        Render.workingCanvas = workingCanvas;
     })(Render = engine3D.Render || (engine3D.Render = {}));
 })(engine3D || (engine3D = {}));
 var engine3D;
@@ -198,8 +226,9 @@ var engine3D;
     var Render;
     (function (Render) {
         var projectCanvas = (function () {
-            function projectCanvas(workingCanvas) {
-                this._workingCanvas = workingCanvas;
+            function projectCanvas(canvasElement, drawCanvas) {
+                this._canvasElement = canvasElement;
+                this._drawCanvas = drawCanvas;
             }
             projectCanvas.prototype.facesTo2D = function (mesh, transformMatrix) {
                 for (var indexFaces = 0; indexFaces < mesh.Faces.length; indexFaces++) {
@@ -214,19 +243,19 @@ var engine3D;
             projectCanvas.prototype.corrdinate3DTo2D = function (coordinate, transformMatrix) {
                 var point = BABYLON.Vector3.TransformCoordinates(coordinate, transformMatrix);
                 //  We then need transform them to have x:0, y:0 on top left.
-                var x = point.x * this._workingCanvas.getWorkingWidth() + this._workingCanvas.getWorkingWidth() / 2.0;
-                var y = -point.y * this._workingCanvas.getWorkingHeight() + this._workingCanvas.getWorkingHeight() / 2.0;
+                var x = point.x * this._canvasElement.width + this._canvasElement.width / 2.0;
+                var y = -point.y * this._canvasElement.height + this._canvasElement.height / 2.0;
                 return (new BABYLON.Vector3(x, y, point.z));
             };
             projectCanvas.prototype.drawPoint = function (point, color) {
                 // Clipping what's visible on screen
                 if (this.isInBound(point)) {
-                    this._workingCanvas.putPixel(point.x, point.y, point.z, color);
+                    this._drawCanvas.putPixel(point.x, point.y, point.z, color);
                 }
             };
             projectCanvas.prototype.isInBound = function (point) {
-                return point.x >= 0 && point.y >= 0 && point.x < this._workingCanvas.getWorkingWidth()
-                    && point.y < this._workingCanvas.getWorkingHeight();
+                return point.x >= 0 && point.y >= 0 && point.x < this._canvasElement.width
+                    && point.y < this._canvasElement.height;
             };
             projectCanvas.prototype.drawTriangle = function (p1, p2, p3, color) {
                 // Sorting the points in order to always have this order on screen p1, p2 & p3
@@ -276,21 +305,19 @@ var engine3D;
             // papb -> pcpd
             // pa, pb, pc, pd must then be sorted before
             projectCanvas.prototype.processScanLine = function (y, pa, pb, pc, pd, color) {
-                // Thanks to current Y, we can compute the gradient to compute others values like
-                // the starting X (sx) and ending X (ex) to draw between
-                // if pa.Y == pb.Y or pc.Y == pd.Y, gradient is forced to 1
-                var gradient1 = pa.y != pb.y ? (y - pa.y) / (pb.y - pa.y) : 1;
-                var gradient2 = pc.y != pd.y ? (y - pc.y) / (pd.y - pc.y) : 1;
-                // Fragments are produced via interpolation of the vertices
-                var sx = BABYLON.MathTools.interpolate(pa.x, pb.x, gradient1) >> 0;
-                var ex = BABYLON.MathTools.interpolate(pc.x, pd.x, gradient2) >> 0;
-                // starting Z & ending Z
-                var z1 = BABYLON.MathTools.interpolate(pa.z, pb.z, gradient1);
-                var z2 = BABYLON.MathTools.interpolate(pc.z, pd.z, gradient2);
-                // drawing a line from left (sx) to right (ex) 
-                for (var x = sx; x < ex; x++) {
-                    var gradient = (x - sx) / (ex - sx);
-                    var z = BABYLON.MathTools.interpolate(z1, z2, gradient);
+                var gradientPaToPb = BABYLON.MathTools.Gradient(y, pa.y, pb.y);
+                var gradientPcToPd = BABYLON.MathTools.Gradient(y, pc.y, pd.y);
+                var startingX = BABYLON.MathTools.Interpolate(pa.x, pb.x, gradientPaToPb) >> 0;
+                var endingX = BABYLON.MathTools.Interpolate(pc.x, pd.x, gradientPcToPd) >> 0;
+                var startingZ = BABYLON.MathTools.Interpolate(pa.z, pb.z, gradientPaToPb);
+                var endingZ = BABYLON.MathTools.Interpolate(pc.z, pd.z, gradientPcToPd);
+                // drawing a line from left (startingX) to right (ex) 
+                this._drawLineFromLeftToRight(y, startingX, endingX, startingZ, endingZ, color);
+            };
+            projectCanvas.prototype._drawLineFromLeftToRight = function (y, startingX, endingX, startingZ, endingZ, color) {
+                for (var x = startingX; x < endingX; x++) {
+                    var gradient = BABYLON.MathTools.Gradient(x, startingX, endingX);
+                    var z = BABYLON.MathTools.Interpolate(startingZ, endingZ, gradient);
                     this.drawPoint(new BABYLON.Vector3(x, y, z), color);
                 }
             };
@@ -303,50 +330,18 @@ var engine3D;
 (function (engine3D) {
     var Render;
     (function (Render) {
-        var workingCanvas = (function (_super) {
-            __extends(workingCanvas, _super);
-            function workingCanvas(canvasElement) {
-                _super.call(this, canvasElement);
-                this._workingContext = this._workingCanvas.getContext("2d");
-                this._project = new engine3D.Render.projectCanvas(this);
-                this._depthbuffer = new Array(this._workingCanvas.width * this._workingCanvas.height);
+        var DrawCanvas = (function () {
+            function DrawCanvas(canvasElement) {
+                this._canvasElement = canvasElement;
+                this._depthbuffer = new Array(this._canvasElement.width * this._canvasElement.height);
+                this._workingContext = canvasElement.getContext("2d");
             }
-            workingCanvas.prototype.clear = function () {
-                this._workingContext.clearRect(0, 0, this._workingCanvas.width, this._workingCanvas.height);
-                this._frameBuffer = this._workingContext.createImageData(this._workingCanvas.width, this._workingCanvas.height);
-                // Clearing depth buffer
-                for (var i = 0; i < this._depthbuffer.length; i++) {
-                    // Max possible value 
-                    this._depthbuffer[i] = 10000000;
-                }
-            };
-            workingCanvas.prototype.draw = function () {
+            DrawCanvas.prototype.draw = function () {
                 this._workingContext.putImageData(this._frameBuffer, 0, 0);
             };
-            /*
-            The process used to produce a 3D scene on the display in Computer Graphics is like taking a photograph with a camera. It involves four transformations:
-              1.Arrange the objects (or models, or avatar) in the world (Model Transformation or World transformation).
-              2.Position and orientation the camera (View transformation).
-              3.Select a camera lens (wide angle, normal or telescopic), adjust the focus length and zoom factor to set the camera's field of view (Projection transformation).
-              4.Print the photo on a selected area of the paper (Viewport transformation) - in rasterization stage
-            */
-            workingCanvas.prototype.render = function (camera, scene) {
-                var meshes = scene.meshes;
-                var viewTransform = camera.getViewMatrix();
-                var projectionTransform = camera.getProjectionMaxtrix();
-                for (var index = 0, meshesLength = meshes.length; index < meshesLength; index++) {
-                    this.animation(meshes, index);
-                    var transformMatrix = engine3D.Render.getTramformMatrixOfMesh(meshes[index], viewTransform, projectionTransform);
-                    this._project.facesTo2D(meshes[index], transformMatrix);
-                }
-            };
-            workingCanvas.prototype.animation = function (meshes, index) {
-                meshes[index].Rotation.x += 0.01;
-                meshes[index].Rotation.z += 0.01;
-            };
-            workingCanvas.prototype.putPixel = function (x, y, z, color) {
+            DrawCanvas.prototype.putPixel = function (x, y, z, color) {
                 // The Uint8ClampedArray contains height × width × 4 bytes of data.
-                var index = (x + y * this._workingCanvas.width);
+                var index = (x + y * this._canvasElement.width);
                 // TODO: That way transparent dont matter
                 if (this._depthbuffer[index] < z) {
                     return; // Discard
@@ -360,9 +355,54 @@ var engine3D;
                 this._frameBuffer.data[indexColor + 2] = color.b;
                 this._frameBuffer.data[indexColor + 3] = color.a;
             };
-            return workingCanvas;
-        }(engine3D.Render.AbstractRender));
-        Render.workingCanvas = workingCanvas;
+            DrawCanvas.prototype.clear = function () {
+                this._workingContext.clearRect(0, 0, this._canvasElement.width, this._canvasElement.height);
+                this._frameBuffer = this._workingContext.createImageData(this._canvasElement.width, this._canvasElement.height);
+                // Clearing depth buffer
+                for (var i = 0; i < this._depthbuffer.length; i++) {
+                    // Max possible value
+                    this._depthbuffer[i] = 10000000;
+                }
+            };
+            return DrawCanvas;
+        }());
+        Render.DrawCanvas = DrawCanvas;
+    })(Render = engine3D.Render || (engine3D.Render = {}));
+})(engine3D || (engine3D = {}));
+var engine3D;
+(function (engine3D) {
+    var Render;
+    (function (Render) {
+        var RenderCanvas = (function () {
+            function RenderCanvas(canvasElement, drawCanvas) {
+                this._drawCanvas = drawCanvas;
+                this._project = new Render.projectCanvas(canvasElement, drawCanvas);
+            }
+            /*
+            The process used to produce a 3D scene on the display in Computer Graphics is like taking a photograph with a camera. It involves four transformations:
+              1.Arrange the objects (or models, or avatar) in the world (Model Transformation or World transformation).
+              2.Position and orientation the camera (View transformation).
+              3.Select a camera lens (wide angle, normal or telescopic), adjust the focus length and zoom factor to set the camera's field of view (Projection transformation).
+              4.Print the photo on a selected area of the paper (Viewport transformation) - in rasterization stage
+            */
+            RenderCanvas.prototype.render = function (camera, scene) {
+                var meshes = scene.meshes;
+                var viewTransform = camera.getViewMatrix();
+                var projectionTransform = camera.getProjectionMaxtrix();
+                for (var index = 0, meshesLength = meshes.length; index < meshesLength; index++) {
+                    this.animation(meshes, index);
+                    var worldMatrixMesh = Render.getWorldMatrixOfMesh(meshes[index]);
+                    var transformMatrix = Render.getTransformMatrix(worldMatrixMesh, viewTransform, projectionTransform);
+                    this._project.facesTo2D(meshes[index], transformMatrix);
+                }
+            };
+            RenderCanvas.prototype.animation = function (meshes, index) {
+                meshes[index].Rotation.x += 0.01;
+                meshes[index].Rotation.z += 0.01;
+            };
+            return RenderCanvas;
+        }());
+        Render.RenderCanvas = RenderCanvas;
     })(Render = engine3D.Render || (engine3D.Render = {}));
 })(engine3D || (engine3D = {}));
 var engine3D;
@@ -414,11 +454,12 @@ var engine3D;
             AbstractPlatform.prototype.start = function (scene, camera) {
                 this._drawingLoop.start(camera, scene);
             };
-            AbstractPlatform.prototype.stop = function () {
+            AbstractPlatform.prototype.pause = function () {
                 this._drawingLoop.pause();
             };
             AbstractPlatform.prototype.changeScene = function (scene) {
                 // TODO
+                this._drawingLoop.start(null, scene);
             };
             AbstractPlatform.prototype.changeCamera = function (camera) {
                 // TODO
@@ -573,8 +614,11 @@ var BABYLON;
             if (max === void 0) { max = 1; }
             return Math.max(min, Math.min(value, max));
         };
-        MathTools.interpolate = function (min, max, gradient) {
+        MathTools.Interpolate = function (min, max, gradient) {
             return min + (max - min) * MathTools.Clamp(gradient);
+        };
+        MathTools.Gradient = function (currentPoint, startPoint, endPoint) {
+            return startPoint != endPoint ? (currentPoint - startPoint) / (endPoint - startPoint) : 1;
         };
         return MathTools;
     }());
@@ -3755,7 +3799,6 @@ var Utils;
         for (var i = 0; i < arg.length; i++) {
             callback.call(this, arg[i]);
         }
-        return arg.length > 1;
     }
     Utils._CallCallbackForEachArgument = _CallCallbackForEachArgument;
 })(Utils || (Utils = {}));

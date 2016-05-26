@@ -8,7 +8,7 @@ namespace engine3D{
       
       protected _calculateViewMatrix(){
         this._viewMatrix = BABYLON.Matrix.LookAtLH(this._Position,
-         this._Target, BABYLON.Vector3.Up());
+                             this._Target, BABYLON.Vector3.Up());
       }
       
       protected abstract _calculateProjectionMaxtrix():void;
