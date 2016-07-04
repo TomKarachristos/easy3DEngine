@@ -1,10 +1,12 @@
 // <reference path="./lib/babylon.math.ts"/>
 namespace mesh3D{
+
   export interface Face {
     A: number;
     B: number;
     C: number;
    }
+   
   export class Mesh {
     Position: BABYLON.Vector3;
     Rotation: BABYLON.Vector3;

@@ -8,12 +8,12 @@ namespace engine3D{
       
       constructor(fov:number,aspect:number,near:number,far:number) {
         super();
+        this._Position = new BABYLON.Vector3(0, 0, 10);
+        this._Target = new BABYLON.Vector3(0, 0, 0);
         this._fov = fov;
         this._aspect = aspect;
         this._near = near;
         this._far = far;
-        this._Position = new BABYLON.Vector3(0, 0, 10);
-        this._Target = new BABYLON.Vector3(0, 0, 0);
         this._calculateViewMatrix();
         this._calculateProjectionMaxtrix();
       }

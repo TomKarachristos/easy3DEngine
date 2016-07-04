@@ -98,12 +98,12 @@ var engine3D;
             __extends(Prospective, _super);
             function Prospective(fov, aspect, near, far) {
                 _super.call(this);
+                this._Position = new BABYLON.Vector3(0, 0, 10);
+                this._Target = new BABYLON.Vector3(0, 0, 0);
                 this._fov = fov;
                 this._aspect = aspect;
                 this._near = near;
                 this._far = far;
-                this._Position = new BABYLON.Vector3(0, 0, 10);
-                this._Target = new BABYLON.Vector3(0, 0, 0);
                 this._calculateViewMatrix();
                 this._calculateProjectionMaxtrix();
             }
