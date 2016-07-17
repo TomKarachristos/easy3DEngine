@@ -1,0 +1,32 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch index.html with sourcemaps",
+      "type": "chrome",
+      "runtimeExecutable": "C:\\Users\\thomas karachristos\\AppData\\Local\\Google\\Chrome SxS\\Application\\chrome.exe",
+      "request": "launch",
+      "file": "${workspaceRoot}/index.html",
+      "sourceMaps": true,
+      "webRoot": "${workspaceRoot}"
+    },
+    {
+      "name": "Launch localhost with sourcemaps",
+      "type": "chrome",
+      "request": "launch",
+      "runtimeExecutable": "C:\\Users\\thomas karachristos\\AppData\\Local\\Google\\Chrome SxS\\Application\\chrome.exe",
+      "url": "http://localhost:8080",
+      "sourceMaps": true,
+      "webRoot": "${workspaceRoot}"
+    },
+    {
+      "name": "Attach with sourcemaps",
+      "type": "chrome",
+      "request": "attach",
+      "runtimeExecutable": "C:\\Users\\thomas karachristos\\AppData\\Local\\Google\\Chrome SxS\\Application\\chrome.exe",
+      "port": 9222,
+      "sourceMaps": true,
+      "webRoot": "${workspaceRoot}"
+    }
+  ]
+}

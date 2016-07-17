@@ -15,12 +15,7 @@ function loadJSONCompleted(meshesLoaded) {
     // let camera =  new engine3D.Camera.Prospective(0.78, window.innerWidth/ window.innerHeight, 0.1,0.2);
     var camera = new engine3D.Camera.Orthographic(15, 10, 0.1, 0.2);
     render.start(scene, camera);
-    this.resize();
-    window.onresize = this.resize;
-}
-function resize() {
-    render.setWorkingHeight(window.innerHeight);
-    render.setWorkingWidth(window.innerWidth);
+    render.autoResizeInWindowEvent();
 }
 var engine3D;
 (function (engine3D) {
@@ -447,9 +442,10 @@ var engine3D;
     var Render;
     (function (Render) {
         var AbstractPlatform = (function () {
-            function AbstractPlatform(canvasElement) {
+            function AbstractPlatform(canvasElement, options) {
                 this._workingCanvas = new engine3D.Render.workingCanvas(canvasElement);
                 this._drawingLoop = new engine3D.Render.drawingLoop(this._workingCanvas);
+                this._resize();
             }
             AbstractPlatform.prototype.start = function (scene, camera) {
                 this._drawingLoop.start(camera, scene);
@@ -470,6 +466,13 @@ var engine3D;
             AbstractPlatform.prototype.setWorkingWidth = function (width) {
                 this._workingCanvas.setWorkingWidth(width);
             };
+            AbstractPlatform.prototype.autoResizeInWindowEvent = function () {
+                window.onresize = this._resize.bind(this);
+            };
+            AbstractPlatform.prototype._resize = function () {
+                this.setWorkingHeight(window.innerHeight);
+                this.setWorkingWidth(window.innerWidth);
+            };
             return AbstractPlatform;
         }());
         Render.AbstractPlatform = AbstractPlatform;
@@ -489,7 +492,6 @@ var engine3D;
         Render.Canvas = Canvas;
     })(Render = engine3D.Render || (engine3D.Render = {}));
 })(engine3D || (engine3D = {}));
-/// <reference path="../abstractPlatform.ts" />
 var engine3D;
 (function (engine3D) {
     var Render;

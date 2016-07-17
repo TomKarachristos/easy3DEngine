@@ -13,14 +13,9 @@ function loadJSONCompleted(meshesLoaded: mesh3D.Mesh[]) {
   // let camera =  new engine3D.Camera.Prospective(0.78, window.innerWidth/ window.innerHeight, 0.1,0.2);
   let camera =  new engine3D.Camera.Orthographic(15,10, 0.1,0.2);
   render.start(scene,camera);
-  this.resize();
-  window.onresize = this.resize;
+  render.autoResizeInWindowEvent();
 }
 
-function resize(){
-  render.setWorkingHeight( window.innerHeight );
-  render.setWorkingWidth( window.innerWidth );
-}
     
     
     
