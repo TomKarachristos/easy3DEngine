@@ -7,7 +7,6 @@ namespace engine3D{
         this._workingCanvas = canvasElement;
       }
       
-      // BUG: SOMETHING WITH WIDTH AND HEIGHT change
       protected abstract _clear(): void;
       protected abstract _render(camera: engine3D.Camera.AbstractCamera, scene: engine3D.Scene): void;
       protected abstract _draw(): void;

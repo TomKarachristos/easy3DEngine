@@ -23,23 +23,29 @@ namespace engine3D {
         // The Uint8ClampedArray contains height × width × 4 bytes of data.
         var index: number = (x + y * this._canvasElement.width);
 
-        // TODO: That way transparent dont matter
         if (this._depthbuffer[index] < z) {
+          // TODO: transparen
           return; // Discard
+        }else{
+          this.setDepthBuffer(index,z);
         }
+        this.setFrameBuffer(index,color);
+      }
 
+      private setDepthBuffer(index:number,z:number):void{
+        this._depthbuffer[index] = z;
+      }
+
+      private setFrameBuffer(index:number, color: BABYLON.Color4):void{
         // red, green, blue, and alpha, in that order; that is, "RGBA".
         // with the top left pixel's red component being at index 0 within the array
         var indexColor: number = index * 4;
-
-        this._depthbuffer[index] = z;
-
         this._frameBuffer.data[indexColor] = color.r;
         this._frameBuffer.data[indexColor + 1] = color.g;
         this._frameBuffer.data[indexColor + 2] = color.b;
         this._frameBuffer.data[indexColor + 3] = color.a;
       }
-
+      
       public clear(): void {
         this._workingContext.clearRect(0, 0, this._canvasElement.width, this._canvasElement.height);
         this._frameBuffer = this._workingContext.createImageData(this._canvasElement.width, this._canvasElement.height);

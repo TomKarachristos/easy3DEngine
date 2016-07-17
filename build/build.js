@@ -337,14 +337,22 @@ var engine3D;
             DrawCanvas.prototype.putPixel = function (x, y, z, color) {
                 // The Uint8ClampedArray contains height × width × 4 bytes of data.
                 var index = (x + y * this._canvasElement.width);
-                // TODO: That way transparent dont matter
                 if (this._depthbuffer[index] < z) {
+                    // TODO: transparen
                     return; // Discard
                 }
+                else {
+                    this.setDepthBuffer(index, z);
+                }
+                this.setFrameBuffer(index, color);
+            };
+            DrawCanvas.prototype.setDepthBuffer = function (index, z) {
+                this._depthbuffer[index] = z;
+            };
+            DrawCanvas.prototype.setFrameBuffer = function (index, color) {
                 // red, green, blue, and alpha, in that order; that is, "RGBA".
                 // with the top left pixel's red component being at index 0 within the array
                 var indexColor = index * 4;
-                this._depthbuffer[index] = z;
                 this._frameBuffer.data[indexColor] = color.r;
                 this._frameBuffer.data[indexColor + 1] = color.g;
                 this._frameBuffer.data[indexColor + 2] = color.b;
