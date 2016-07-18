@@ -16,7 +16,7 @@ namespace engine3D {
           let pixelA = this.corrdinate3DTo2D(mesh.Vertices[currentFace.A], transformMatrix);
           let pixelB = this.corrdinate3DTo2D(mesh.Vertices[currentFace.B], transformMatrix);
           let pixelC = this.corrdinate3DTo2D(mesh.Vertices[currentFace.C], transformMatrix);
-
+          // A randomize like color 
           let color: number = 0.25 + ((indexFaces % mesh.Faces.length) / mesh.Faces.length) * 0.75 * 255;
           this.drawTriangle(pixelA, pixelB, pixelC, new BABYLON.Color4(255, color, color, color));
         }
@@ -38,10 +38,12 @@ namespace engine3D {
       }
 
       public isInBound(point: BABYLON.Vector3): boolean {
-        return point.x >= 0 && point.y >= 0 && point.x < this._canvasElement.width
-          && point.y < this._canvasElement.height
+        return point.x >= 0 && point.y >= 0 && 
+               point.x < this._canvasElement.width &&
+               point.y < this._canvasElement.height
       }
 
+      //FIXME much consume function, find better way.
       public drawTriangle(p1: BABYLON.Vector3, p2: BABYLON.Vector3,
         p3: BABYLON.Vector3, color: BABYLON.Color4): void {
         // Sorting the points in order to always have this order on screen p1, p2 & p3
@@ -96,6 +98,7 @@ namespace engine3D {
       // drawing line between 2 points from left to right
       // papb -> pcpd
       // pa, pb, pc, pd must then be sorted before
+      //FIXME very memory consume
       public processScanLine(y: number, pa: BABYLON.Vector3, pb: BABYLON.Vector3,
         pc: BABYLON.Vector3, pd: BABYLON.Vector3, color: BABYLON.Color4): void {
         let gradientPaToPb = BABYLON.MathTools.Gradient(y, pa.y, pb.y);
@@ -111,12 +114,11 @@ namespace engine3D {
         this._drawLineFromLeftToRight(y, startingX, endingX, startingZ, endingZ, color)
       }
 
-
       private _drawLineFromLeftToRight(y: number, startingX: number, endingX: number, startingZ: number, endingZ: number, color: BABYLON.Color4): void {
         for (let x = startingX; x < endingX; x++) {
           let gradient: number = BABYLON.MathTools.Gradient(x, startingX, endingX);
           let z = BABYLON.MathTools.Interpolate(startingZ, endingZ, gradient);
-          this.drawPoint(new BABYLON.Vector3(x, y, z), color);
+          this.drawPoint(new BABYLON.Vector3(x, y, z), color); //FIXME new here is very consume
         }
       }
 

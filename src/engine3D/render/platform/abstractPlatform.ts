@@ -12,7 +12,9 @@ namespace engine3D{
       }
       
       public start(scene: engine3D.Scene, camera: engine3D.Camera.AbstractCamera): void{
-        this._drawingLoop.start(camera,scene);
+        this._drawingLoop.setCamera(camera);
+        this._drawingLoop.setScene(scene);
+        this._drawingLoop.start();
       }
       
       public pause(): void{
@@ -21,7 +23,7 @@ namespace engine3D{
       
       public changeScene(scene: engine3D.Scene): void{
         // TODO
-        this._drawingLoop.start(null,scene);
+        // this._drawingLoop.start(null,scene);
       }
       public changeCamera(camera: engine3D.Camera.AbstractCamera): void{
         // TODO

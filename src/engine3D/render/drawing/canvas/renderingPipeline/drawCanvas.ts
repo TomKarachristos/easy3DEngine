@@ -3,7 +3,7 @@ namespace engine3D {
     export class DrawCanvas {
       // The color values of the pixels are stored in a special part of graphics memory called frame buffer.
       private _frameBuffer: ImageData; // (width*height) * 4 (R,G,B & Alpha values).
-      // The z-value (not grid-aligned) denotes its depth. The z-values are needed to capture the relative depth of various primitives,
+      // The_depthbuffer (not grid-aligned) denotes its depth. The _depthbuffer(z-values) are needed to capture the relative depth of various primitives,
       // so that the occluded objects can be discarded (or the alpha channel of transparent objects processed) in the output-merging stage.
       private _depthbuffer: number[];
       private _canvasElement: HTMLCanvasElement
@@ -50,13 +50,8 @@ namespace engine3D {
         this._workingContext.clearRect(0, 0, this._canvasElement.width, this._canvasElement.height);
         this._frameBuffer = this._workingContext.createImageData(this._canvasElement.width, this._canvasElement.height);
 
-        // Clearing depth buffer
-        for (var i = 0; i < this._depthbuffer.length; i++) {
-          // Max possible value
-          this._depthbuffer[i] = 10000000;
-        }
+        this._depthbuffer = [];
       }
-
     }
   }
 }

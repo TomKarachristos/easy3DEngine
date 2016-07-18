@@ -15,6 +15,7 @@ function loadJSONCompleted(meshesLoaded) {
     // let camera =  new engine3D.Camera.Prospective(0.78, window.innerWidth/ window.innerHeight, 0.1,0.2);
     var camera = new engine3D.Camera.Orthographic(15, 10, 0.1, 0.2);
     render.start(scene, camera);
+    // TODO: make this in options
     render.autoResizeInWindowEvent();
 }
 var engine3D;
@@ -153,9 +154,13 @@ var engine3D;
                 };
                 this._workingCanvas = workingCanvas;
             }
-            drawingLoop.prototype.start = function (camera, scene) {
+            drawingLoop.prototype.setCamera = function (camera) {
                 this._camera = camera;
+            };
+            drawingLoop.prototype.setScene = function (scene) {
                 this._scene = scene;
+            };
+            drawingLoop.prototype.start = function () {
                 this._requestID = requestAnimationFrame(this._drawingLoop);
             };
             drawingLoop.prototype.pause = function () {
@@ -200,10 +205,14 @@ var engine3D;
             // rotate mesh inside the world matrix coordinate
             var rotateMesh = BABYLON.Matrix.RotationYawPitchRoll(cMesh.Rotation.y, cMesh.Rotation.x, cMesh.Rotation.z);
             // translate mesh after rotate
-            var rotateAndTranslateMesh = rotateMesh.multiply(BABYLON.Matrix.Translation(cMesh.Position.x, cMesh.Position.y, cMesh.Position.z));
-            return rotateAndTranslateMesh;
+            var translateMesh = rotateMesh.multiply(BABYLON.Matrix.Translation(cMesh.Position.x, cMesh.Position.y, cMesh.Position.z));
+            return translateMesh;
         }
         Render.getWorldMatrixOfMesh = getWorldMatrixOfMesh;
+        // Arrange the objects in the world (Model Transformation or World transformation).
+        // The View Matrix: This matrix will transform vertices from world-space to view-space.(Camera will be 0,0,0)
+        // Projection matrix:  select a camera lens (wide angle, normal or telescopic), 
+        // adjust the focus length and zoom factor to set the camera's field of view (Projection transformation).
         function getTransformMatrix(worldMatrix, viewMatrix, projectionMatrix) {
             return worldMatrix.multiply(viewMatrix).multiply(projectionMatrix);
         }
@@ -231,6 +240,7 @@ var engine3D;
                     var pixelA = this.corrdinate3DTo2D(mesh.Vertices[currentFace.A], transformMatrix);
                     var pixelB = this.corrdinate3DTo2D(mesh.Vertices[currentFace.B], transformMatrix);
                     var pixelC = this.corrdinate3DTo2D(mesh.Vertices[currentFace.C], transformMatrix);
+                    // A randomize like color 
                     var color = 0.25 + ((indexFaces % mesh.Faces.length) / mesh.Faces.length) * 0.75 * 255;
                     this.drawTriangle(pixelA, pixelB, pixelC, new BABYLON.Color4(255, color, color, color));
                 }
@@ -249,9 +259,11 @@ var engine3D;
                 }
             };
             projectCanvas.prototype.isInBound = function (point) {
-                return point.x >= 0 && point.y >= 0 && point.x < this._canvasElement.width
-                    && point.y < this._canvasElement.height;
+                return point.x >= 0 && point.y >= 0 &&
+                    point.x < this._canvasElement.width &&
+                    point.y < this._canvasElement.height;
             };
+            //FIXME much consume function, find better way.
             projectCanvas.prototype.drawTriangle = function (p1, p2, p3, color) {
                 // Sorting the points in order to always have this order on screen p1, p2 & p3
                 // with p1 always up (thus having the Y the lowest possible to be near the top screen)
@@ -299,6 +311,7 @@ var engine3D;
             // drawing line between 2 points from left to right
             // papb -> pcpd
             // pa, pb, pc, pd must then be sorted before
+            //FIXME very memory consume
             projectCanvas.prototype.processScanLine = function (y, pa, pb, pc, pd, color) {
                 var gradientPaToPb = BABYLON.MathTools.Gradient(y, pa.y, pb.y);
                 var gradientPcToPd = BABYLON.MathTools.Gradient(y, pc.y, pd.y);
@@ -313,7 +326,7 @@ var engine3D;
                 for (var x = startingX; x < endingX; x++) {
                     var gradient = BABYLON.MathTools.Gradient(x, startingX, endingX);
                     var z = BABYLON.MathTools.Interpolate(startingZ, endingZ, gradient);
-                    this.drawPoint(new BABYLON.Vector3(x, y, z), color);
+                    this.drawPoint(new BABYLON.Vector3(x, y, z), color); //FIXME new here is very consume
                 }
             };
             return projectCanvas;
@@ -361,11 +374,7 @@ var engine3D;
             DrawCanvas.prototype.clear = function () {
                 this._workingContext.clearRect(0, 0, this._canvasElement.width, this._canvasElement.height);
                 this._frameBuffer = this._workingContext.createImageData(this._canvasElement.width, this._canvasElement.height);
-                // Clearing depth buffer
-                for (var i = 0; i < this._depthbuffer.length; i++) {
-                    // Max possible value
-                    this._depthbuffer[i] = 10000000;
-                }
+                this._depthbuffer = [];
             };
             return DrawCanvas;
         }());
@@ -381,19 +390,12 @@ var engine3D;
                 this._drawCanvas = drawCanvas;
                 this._project = new Render.projectCanvas(canvasElement, drawCanvas);
             }
-            /*
-            The process used to produce a 3D scene on the display in Computer Graphics is like taking a photograph with a camera. It involves four transformations:
-              1.Arrange the objects (or models, or avatar) in the world (Model Transformation or World transformation).
-              2.Position and orientation the camera (View transformation).
-              3.Select a camera lens (wide angle, normal or telescopic), adjust the focus length and zoom factor to set the camera's field of view (Projection transformation).
-              4.Print the photo on a selected area of the paper (Viewport transformation) - in rasterization stage
-            */
             RenderCanvas.prototype.render = function (camera, scene) {
                 var meshes = scene.meshes;
                 var viewTransform = camera.getViewMatrix();
                 var projectionTransform = camera.getProjectionMaxtrix();
-                for (var index = 0, meshesLength = meshes.length; index < meshesLength; index++) {
-                    this.animation(meshes, index);
+                for (var index = 0, meshesLength = meshes.length; index < meshesLength; ++index) {
+                    this.animation(meshes, index); //NOTE test reasons
                     var worldMatrixMesh = Render.getWorldMatrixOfMesh(meshes[index]);
                     var transformMatrix = Render.getTransformMatrix(worldMatrixMesh, viewTransform, projectionTransform);
                     this._project.facesTo2D(meshes[index], transformMatrix);
@@ -456,14 +458,16 @@ var engine3D;
                 this._resize();
             }
             AbstractPlatform.prototype.start = function (scene, camera) {
-                this._drawingLoop.start(camera, scene);
+                this._drawingLoop.setCamera(camera);
+                this._drawingLoop.setScene(scene);
+                this._drawingLoop.start();
             };
             AbstractPlatform.prototype.pause = function () {
                 this._drawingLoop.pause();
             };
             AbstractPlatform.prototype.changeScene = function (scene) {
                 // TODO
-                this._drawingLoop.start(null, scene);
+                // this._drawingLoop.start(null,scene);
             };
             AbstractPlatform.prototype.changeCamera = function (camera) {
                 // TODO

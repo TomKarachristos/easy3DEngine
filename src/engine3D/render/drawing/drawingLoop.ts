@@ -10,9 +10,14 @@ namespace engine3D {
         this._workingCanvas = workingCanvas;
       }
 
-      public start(camera: engine3D.Camera.AbstractCamera, scene: engine3D.Scene) {
+      public setCamera(camera: engine3D.Camera.AbstractCamera):void {
         this._camera = camera;
+      }
+
+      public setScene(scene: engine3D.Scene):void{
         this._scene = scene;
+      }
+      public start() {
         this._requestID = requestAnimationFrame(this._drawingLoop);
       }
 
