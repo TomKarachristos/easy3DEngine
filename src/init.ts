@@ -3,7 +3,8 @@ document.addEventListener("DOMContentLoaded", init, false);
 
 function init() {
     render = new engine3D.Render.Canvas(<HTMLCanvasElement> document.getElementById("frontBuffer"));
-    mesh3D.Utils.LoadJSONFileAsync("https://raw.githubusercontent.com/deltakosh/MVA3DHTML5GameDev/master/Chapter%201/003.%20loading%20meshes%20from%20Blender/monkey.babylon",
+    mesh3D.Utils.LoadJSONFileAsync(
+    "https://raw.githubusercontent.com/deltakosh/MVA3DHTML5GameDev/master/Chapter%201/003.%20loading%20meshes%20from%20Blender/monkey.babylon",
      loadJSONCompleted)
 }
 
