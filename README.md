@@ -1,6 +1,6 @@
 Code example of a simple 3DEngine in typescript using only CPU for educational reasons.
 
-I keep code clean and easy.
+I keep the code clean and easy.
 Dependencies: I am using the babylon math library.
 
 references:
